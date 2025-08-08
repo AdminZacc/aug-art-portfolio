@@ -69,6 +69,15 @@
         </div>
         <p class="muted">Use an existing Supabase auth user. (Sign-up disabled here to keep control.)</p>
       </form>
+      <hr style="margin:1.25rem 0;border:none;border-top:1px solid #222831;"/>
+      <div>
+        <h3 style="margin:.25rem 0 .5rem;font-size:.8rem;letter-spacing:.5px;text-transform:uppercase;color:var(--text-dim);">Connection</h3>
+        <div class="row" style="align-items:center;gap:.5rem;flex-wrap:wrap;">
+          <button id="connTestBtn" type="button" class="btn" style="flex:0 0 auto;">Test Supabase</button>
+          <span id="connStatus" class="status-inline" aria-live="polite"></span>
+        </div>
+        <p class="muted" style="margin-top:.35rem;">Runs a lightweight query (limit 1) against <code>artworks</code> to verify URL/key & latency.</p>
+      </div>
     </section>
 
     <section id="uploadPanel" class="panel" hidden>

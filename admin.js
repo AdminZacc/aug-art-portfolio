@@ -4,6 +4,8 @@
   const cfg = window.SUPABASE_CONFIG;
   const loginForm = document.getElementById('loginForm');
   const loginStatus = document.getElementById('loginStatus');
+  const connTestBtn = document.getElementById('connTestBtn');
+  const connStatus = document.getElementById('connStatus');
   const logoutBtn = document.getElementById('logoutBtn');
   const authPanel = document.getElementById('authPanel');
   const uploadPanel = document.getElementById('uploadPanel');
@@ -69,6 +71,27 @@
     session = null;
     toggleAuthUI();
   });
+
+  // Connection test
+  if (connTestBtn) {
+    connTestBtn.addEventListener('click', async () => {
+      if (!cfg || !cfg.url || !cfg.anonKey) { set(connStatus,'Missing config.js'); return; }
+      set(connStatus, 'Testing...');
+      connTestBtn.disabled = true;
+      const t0 = performance.now();
+      try {
+        const { data, error } = await supa.from('artworks').select('id').limit(1);
+        const ms = Math.round(performance.now() - t0);
+        if (error) throw error;
+        set(connStatus, `OK (${ms} ms${data && data.length ? ', 1+ rows' : ''})`);
+      } catch (err) {
+        console.error(err);
+        set(connStatus, (err.message||'Error').slice(0,120));
+      } finally {
+        connTestBtn.disabled = false;
+      }
+    });
+  }
 
   artForm.addEventListener('submit', async e => {
     e.preventDefault();
