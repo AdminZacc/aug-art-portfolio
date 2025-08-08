@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin • Art Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .admin-wrap{max-width:900px;margin:0 auto;}
+    .panel{background:var(--bg-alt);border:1px solid #262c35;padding:1rem 1.25rem;margin-bottom:1.2rem;border-radius:var(--radius);box-shadow:var(--shadow);}    
+    form.art-form{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));align-items:start;}
+    form.art-form .full{grid-column:1/-1;}
+    label{display:flex;flex-direction:column;font-size:.7rem;letter-spacing:.5px;font-weight:600;color:var(--text-dim);gap:.35rem;text-transform:uppercase;}
+    input[type=text],input[type=password],input[type=email],textarea{background:#14181f;border:1px solid #262c35;border-radius:8px;padding:.65rem .75rem;font:inherit;color:var(--text);resize:vertical;min-height:46px;}
+    textarea{min-height:120px;}
+    input:focus,textarea:focus{outline:none;box-shadow:var(--focus);border-color:var(--accent);}    
+    .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
+    .danger{background:linear-gradient(135deg,#dc2626,#ef4444);}    
+    .login-form{display:grid;gap:.75rem;max-width:360px;}
+    .muted{color:var(--text-dim);font-size:.7rem;}
+    table{width:100%;border-collapse:collapse;font-size:.7rem;}
+    th,td{padding:.5rem .6rem;text-align:left;border-bottom:1px solid #222831;vertical-align:top;}
+    th{font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;font-size:.6rem;}
+    tbody tr:hover{background:#161b23;}
+    .actions button{font-size:.6rem;padding:.35rem .6rem;}
+    .tag-auth{display:inline-block;background:rgba(16,185,129,.18);color:#34d399;padding:.2rem .5rem;border-radius:999px;font-size:.55rem;letter-spacing:.5px;margin-left:.5rem;}
+    .status-inline{font-size:.7rem;color:var(--text-dim);min-height:1rem;margin:.25rem 0 .75rem;}
+  .drop-zone{position:relative;border:2px dashed #39414d;border-radius:12px;padding:1.25rem;display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:140px;background:#14181f;outline:none;transition:border-color .25s,background .25s;}
+  .drop-zone:focus{border-color:var(--accent);box-shadow:var(--focus);}
+  .drop-zone.dragover{border-color:var(--accent);background:#181e27;}
+  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .dz-msg{font-size:.75rem;letter-spacing:.5px;color:var(--text-dim);text-transform:uppercase;}
+  .preview-wrap{margin-top:.75rem;display:grid;gap:.5rem;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+  .preview-item{position:relative;border:1px solid #262c35;border-radius:10px;overflow:hidden;background:#0f1319;}
+  .preview-item img{display:block;width:100%;height:100%;object-fit:cover;}
+  .preview-item .meta{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,transparent,#000a);padding:.25rem .4rem;font-size:.55rem;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+  .progress-wrap{width:100%;margin-top:.6rem;background:#14181f;border:1px solid #262c35;border-radius:8px;overflow:hidden;height:18px;position:relative;}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-accent));transition:width .15s linear;}
+  .progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:600;letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px #000;}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-title">Admin</h1>
+    <nav class="site-nav">
+      <a class="btn" href="./index.html">← Back to Gallery</a>
+      <button id="logoutBtn" class="btn" type="button" hidden>Sign Out</button>
+    </nav>
+  </header>
+  <main class="admin-wrap">
+
+    <section id="authPanel" class="panel">
+      <h2 style="margin-top:0;font-size:1.05rem;">Sign In</h2>
+      <form id="loginForm" class="login-form" autocomplete="on">
+        <label>Email
+          <input id="loginEmail" type="email" required placeholder="you@example.com"/>
+        </label>
+        <label>Password
+          <input id="loginPassword" type="password" required placeholder="••••••••"/>
+        </label>
+        <div class="row">
+          <button class="btn" type="submit">Sign In</button>
+          <span id="loginStatus" class="status-inline"></span>
+        </div>
+        <p class="muted">Use an existing Supabase auth user. (Sign-up disabled here to keep control.)</p>
+      </form>
+    </section>
+
+    <section id="uploadPanel" class="panel" hidden>
+      <h2 style="margin-top:0;font-size:1.05rem;">Add Artwork<span id="authTag" class="tag-auth" hidden>AUTH</span></h2>
+      <form id="artForm" class="art-form" autocomplete="off">
+        <label>Title
+          <input name="title" id="artTitle" type="text" required maxlength="140" placeholder="Artwork title"/>
+        </label>
+        <label class="full">Image (File or External URL)
+          <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drag & drop image or click to browse">
+            <input name="file" id="fileInput" type="file" accept="image/*" aria-label="Image file" />
+            <span class="dz-msg">Drop image / Click to browse</span>
+          </div>
+          <div class="preview-wrap" id="previewWrap" hidden></div>
+          <input name="image_url" id="extUrl" type="text" placeholder="https://external-image-url..." style="margin-top:.6rem" />
+          <div class="row" style="margin-top:.75rem;align-items:flex-end;">
+            <label style="flex:1;min-width:140px;">Max Dimension (px)
+              <input id="maxDim" type="number" min="256" max="6000" value="1600" style="min-height:46px;" />
+            </label>
+            <label style="flex:1;min-width:140px;">Quality (0.4–1.0)
+              <input id="quality" type="number" step="0.05" min="0.4" max="1" value="0.8" style="min-height:46px;" />
+            </label>
+            <label style="flex:0 0 auto;margin-top:.9rem;display:flex;align-items:center;gap:.4rem;font-size:.6rem;text-transform:none;font-weight:500;"> 
+              <input id="skipOptimize" type="checkbox" /> No Optimize
+            </label>
+          </div>
+          <p class="muted" style="margin:.4rem 0 0;">Images larger than the max dimension are proportionally resized and encoded as JPEG/WebP (except GIF/SVG). Uncheck to upload original.</p>
+          <div id="uploadProgressWrap" class="progress-wrap" hidden>
+            <div id="uploadProgressBar" class="progress-bar"></div>
+            <div id="uploadProgressText" class="progress-text">0%</div>
+          </div>
+        </label>
+        <label class="full">Description
+          <textarea name="description" id="artDesc" maxlength="1500" placeholder="Short description"></textarea>
+        </label>
+        <div class="row full">
+          <button class="btn" type="submit">Upload & Save</button>
+          <button id="resetBtn" class="btn danger" type="reset">Reset</button>
+          <button id="clearImageBtn" class="btn" type="button" style="background:linear-gradient(135deg,#475569,#64748b);">Clear Image</button>
+          <span id="formStatus" class="status-inline"></span>
+        </div>
+        <p class="muted full">If both a file and an external URL are provided, the uploaded file is used. Images upload into storage bucket <code>artworks</code>. External URL is used only if no file selected.</p>
+      </form>
+    </section>
+
+    <section id="listPanel" class="panel" hidden>
+      <h2 style="margin-top:0;font-size:1.05rem;">Existing Artworks</h2>
+      <div class="status-inline" id="listStatus"></div>
+      <div style="overflow-x:auto;">
+        <table id="artTable" aria-label="Artworks table">
+          <thead><tr><th>Title</th><th>Image</th><th>Description</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+  <footer class="site-footer"><p>Admin Panel • Supabase</p></footer>
+  <script src="config.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
+  <script src="admin.js" defer></script>
+</body>
+</html>

@@ -75,6 +75,45 @@ create policy "Public read" on public.artworks for select using ( true );
 - Admin upload page (secured via Supabase Auth)
 - Caching layer (localStorage) for offline viewing
 
+## Admin Panel
+
+An `admin.html` + `admin.js` panel lets you:
+
+- Sign in with Supabase email/password (create users via dashboard)
+- Upload an image file (stored in storage bucket `artworks`) OR supply external URL
+- Insert new artwork row
+- List and delete existing artworks
+
+Requirements:
+
+1. Create storage bucket named `artworks` (public)
+2. (Optional) Make uploads public via policy or just use bucket public toggle
+3. Enable RLS on `artworks` table then add policies:
+
+```sql
+-- Allow read to everyone
+create policy "Public read" on public.artworks for select using ( true );
+
+-- Allow inserts / deletes only to authenticated users
+create policy "Auth insert" on public.artworks for insert with check ( auth.role() = 'authenticated' );
+create policy "Auth delete" on public.artworks for delete using ( auth.role() = 'authenticated' );
+```
+
+Storage bucket policies (if not using public bucket):
+
+```sql
+-- Read objects in artworks bucket
+create policy "Public storage read" on storage.objects for select using (
+  bucket_id = 'artworks'
+);
+-- Authenticated users can insert
+create policy "Auth storage insert" on storage.objects for insert with check (
+  bucket_id = 'artworks' and auth.role() = 'authenticated'
+);
+```
+
+Add users manually (Authentication → Users) so only you can log in.
+
 ## License
 
 MIT
