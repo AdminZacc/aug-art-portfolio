@@ -25,6 +25,11 @@
     setStatus('Supabase credentials not set.');
     return;
   }
+  // Guard against placeholders to avoid confusing network errors
+  if (/YOUR_PROJECT_ID/i.test(url) || /^YOUR_/i.test(anonKey)) {
+    setStatus('Update config.js with your real Supabase URL and anon key.');
+    return;
+  }
 
   // Initialize Supabase (v2 CDN global is window.supabase)
   const client = window.supabase.createClient(url, anonKey, {
