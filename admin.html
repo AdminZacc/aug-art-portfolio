@@ -128,5 +128,9 @@
   <script src="config.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
   <script src="admin.js" defer></script>
+  <script defer>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('SW reg failed',e));});}</script>
 </body>
 </html>
+git pull --no-rebase origin main
+git commit -m "Add admin panel, image optimization, real progress uploads"
+git push origin main
