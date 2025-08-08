@@ -114,6 +114,20 @@ create policy "Auth storage insert" on storage.objects for insert with check (
 
 Add users manually (Authentication → Users) so only you can log in.
 
+## Offline & Service Worker
+
+The project includes a basic service worker (`sw.js`) providing:
+
+- Pre-cached core shell: index, styles, scripts, admin, offline page
+- Cache-first strategy for images with LRU trimming (70 images)
+- Stale-while-revalidate for Supabase `artworks` GET requests (REST endpoint containing `/rest/v1/artworks`)
+- Network-first navigation fallback to `offline.html` when offline
+- Runtime caching for same-origin static GET requests
+
+To update the service worker after edits, bump `SW_VERSION` in `sw.js` and deploy; the new worker will activate and old caches pruned.
+
+Note: If hosting under a repo subpath (GitHub Pages), adjust `PRECACHE_ASSETS` and registration path (e.g., use `navigator.serviceWorker.register('./sw.js')`).
+
 ## License
 
 MIT
