@@ -26,6 +26,28 @@
     <section id="gallery" class="gallery" aria-label="Artwork gallery"></section>
   </main>
 
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox" aria-modal="true" aria-hidden="true" role="dialog">
+    <div class="lb-backdrop" data-close></div>
+    <div class="lb-dialog" role="document">
+      <button class="lb-close" type="button" aria-label="Close" data-close>×</button>
+      <div class="lb-media-wrap">
+        <img id="lbImg" alt="Artwork large view" />
+      </div>
+      <div class="lb-meta">
+        <h2 id="lbTitle"></h2>
+        <p id="lbDesc"></p>
+        <div class="lb-footer-row">
+          <span id="lbDate" class="lb-date"></span>
+          <span class="lb-nav">
+            <button id="lbPrev" type="button" aria-label="Previous" class="btn lb-nav-btn">‹</button>
+            <button id="lbNext" type="button" aria-label="Next" class="btn lb-nav-btn">›</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <p>© <span id="year"></span> My Art Portfolio. Powered by Supabase & GitHub Pages.</p>
   </footer>

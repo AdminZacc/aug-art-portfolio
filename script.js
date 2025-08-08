@@ -34,6 +34,18 @@
   let allArt = [];
   let loading = false;
   let lastFetchTs = 0;
+  const CACHE_KEY = 'artworks_cache_v1';
+  const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  // Try load from cache immediately for fast paint
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && Array.isArray(cached.data) && (Date.now() - cached.time) < CACHE_TTL_MS) {
+      allArt = cached.data;
+      render();
+      setStatus(`Loaded ${allArt.length} cached item${allArt.length===1?'':'s'}… refreshing`);
+    }
+  } catch { /* ignore */ }
 
   async function fetchArtworks() {
     if (loading) return;
@@ -47,6 +59,8 @@
       if (error) throw error;
       allArt = data || [];
       lastFetchTs = Date.now();
+  // Cache
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data: allArt })); } catch { /* quota */ }
       render();
       if (!allArt.length) {
         setStatus('No artworks yet. Add some rows in Supabase table.', { state: 'empty' });
@@ -77,7 +91,7 @@
   }
 
   function cardTemplate(a) {
-    const img = a.image_url ? `<img src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title)}" loading="lazy" decoding="async">` : '<div class="placeholder" aria-label="No image">🎨</div>';
+  const img = a.image_url ? `<img class="lazy-img" data-src="${escapeHtml(a.image_url)}" alt="${escapeHtml(a.title)}" loading="lazy" decoding="async" />` : '<div class="placeholder" aria-label="No image">🎨</div>';
     return `<article class="art-card" tabindex="0">
       <div class="art-img-wrap">${img}</div>
       <div class="art-body">
@@ -97,6 +111,7 @@
     galleryEl.innerHTML = items.length
       ? items.map(cardTemplate).join('')
       : '<div class="empty">No matches.</div>';
+  setupLazyLoading();
   }
 
   refreshBtn.addEventListener('click', () => fetchArtworks());
@@ -108,4 +123,103 @@
   });
 
   fetchArtworks();
+
+  /* Lightbox Logic */
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const lbTitle = document.getElementById('lbTitle');
+  const lbDesc = document.getElementById('lbDesc');
+  const lbDate = document.getElementById('lbDate');
+  const lbPrev = document.getElementById('lbPrev');
+  const lbNext = document.getElementById('lbNext');
+  let lbIndex = -1;
+
+  function openLightbox(idx) {
+    if (!allArt.length) return;
+    lbIndex = ((idx % allArt.length) + allArt.length) % allArt.length;
+    const a = allArt[lbIndex];
+    lbImg.src = a.image_url || '';
+    lbImg.alt = a.title || '';
+    lbTitle.textContent = a.title || 'Untitled';
+    lbDesc.textContent = a.description || '';
+    lbDate.textContent = a.created_at ? new Date(a.created_at).toLocaleString() : '';
+    lb.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+    lb.focus();
+  // Preload adjacent
+  preloadAdjacent(lbIndex);
+  }
+  function closeLightbox() {
+    lb.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+    lbIndex = -1;
+  }
+  function nextArt(delta) { if (lbIndex === -1) return; openLightbox(lbIndex + delta); }
+
+  galleryEl.addEventListener('click', e => {
+    const card = e.target.closest('.art-card');
+    if (!card) return;
+    const nodes = [...galleryEl.querySelectorAll('.art-card')];
+    const idx = nodes.indexOf(card);
+    if (idx >= 0) openLightbox(idx);
+  });
+
+  galleryEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.art-card');
+      if (card) {
+        e.preventDefault();
+        const nodes = [...galleryEl.querySelectorAll('.art-card')];
+        const idx = nodes.indexOf(card);
+        if (idx >= 0) openLightbox(idx);
+      }
+    }
+  });
+
+  lb.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeLightbox(); });
+  lbPrev && lbPrev.addEventListener('click', () => nextArt(-1));
+  lbNext && lbNext.addEventListener('click', () => nextArt(1));
+
+  window.addEventListener('keydown', e => {
+    if (lb.getAttribute('aria-hidden') === 'true') return;
+    if (e.key === 'Escape') { closeLightbox(); }
+    else if (e.key === 'ArrowRight') { nextArt(1); }
+    else if (e.key === 'ArrowLeft') { nextArt(-1); }
+  });
+
+  /* Lazy Loading */
+  let io;
+  function setupLazyLoading() {
+    const imgs = galleryEl.querySelectorAll('img.lazy-img[data-src]');
+    if (!imgs.length) return;
+    if (!('IntersectionObserver' in window)) {
+      imgs.forEach(img => loadLazyImage(img));
+      return;
+    }
+    io?.disconnect();
+    io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target; loadLazyImage(img); io.unobserve(img);
+        }
+      });
+    }, { rootMargin: '100px 0px 150px' });
+    imgs.forEach(i => io.observe(i));
+  }
+  function loadLazyImage(img) {
+    const src = img.getAttribute('data-src');
+    if (!src) return;
+    img.src = src;
+    img.removeAttribute('data-src');
+    img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+  }
+
+  function preloadAdjacent(idx) {
+    [idx+1, idx-1].forEach(i => {
+      const a = allArt[((i % allArt.length)+allArt.length)%allArt.length];
+      if (a && a.image_url) {
+        const img = new Image(); img.src = a.image_url; // passive preload
+      }
+    });
+  }
 })();
