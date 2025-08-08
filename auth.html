@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Auth • Art Portfolio</title>
+  <meta name="theme-color" content="#0d0f12" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .auth-wrap{max-width:520px;margin:0 auto;}
+    .panel{background:var(--bg-alt);border:1px solid #262c35;padding:1rem 1.25rem;margin-bottom:1.2rem;border-radius:var(--radius);box-shadow:var(--shadow);}    
+    .login-form{display:grid;gap:.75rem;}
+    label{display:flex;flex-direction:column;font-size:.7rem;letter-spacing:.5px;font-weight:600;color:var(--text-dim);gap:.35rem;text-transform:uppercase;}
+    input[type=text],input[type=password],input[type=email]{background:#14181f;border:1px solid #262c35;border-radius:8px;padding:.65rem .75rem;font:inherit;color:var(--text);min-height:46px;}
+    input:focus{outline:none;box-shadow:var(--focus);border-color:var(--accent);}    
+    .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
+    .status-inline{font-size:.7rem;color:var(--text-dim);min-height:1rem;margin:.25rem 0 .75rem;}
+    .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1rem}
+    .tabs button{background:#14181f;border:1px solid #262c35;color:var(--text-dim)}
+    .tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-title">Account</h1>
+    <nav class="site-nav">
+      <a class="btn" href="./index.html">← Back to Gallery</a>
+      <a class="btn" href="./admin.html">Admin</a>
+    </nav>
+  </header>
+  <main class="auth-wrap">
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button id="tabSignIn" class="btn active" type="button" role="tab" aria-selected="true">Sign In</button>
+        <button id="tabSignUp" class="btn" type="button" role="tab" aria-selected="false">Sign Up</button>
+        <button id="tabMagic" class="btn" type="button" role="tab" aria-selected="false">Magic Link</button>
+        <button id="tabReset" class="btn" type="button" role="tab" aria-selected="false">Reset</button>
+      </div>
+
+      <section id="paneSignIn">
+        <form id="signinForm" class="login-form" autocomplete="on">
+          <label>Email
+            <input id="signinEmail" type="email" required placeholder="you@example.com"/>
+          </label>
+          <label>Password
+            <input id="signinPassword" type="password" required placeholder="••••••••"/>
+          </label>
+          <div class="row">
+            <button class="btn" type="submit">Sign In</button>
+            <span id="signinStatus" class="status-inline"></span>
+          </div>
+        </form>
+      </section>
+
+      <section id="paneSignUp" hidden>
+        <form id="signupForm" class="login-form" autocomplete="on">
+          <label>Email
+            <input id="signupEmail" type="email" required placeholder="you@example.com"/>
+          </label>
+          <label>Password
+            <input id="signupPassword" type="password" required placeholder="Min 6 chars"/>
+          </label>
+          <div class="row">
+            <button class="btn" type="submit">Create Account</button>
+            <span id="signupStatus" class="status-inline"></span>
+          </div>
+          <p class="muted">Depending on your project settings, you may need to confirm via email before signing in.</p>
+        </form>
+      </section>
+
+      <section id="paneMagic" hidden>
+        <form id="magicForm" class="login-form" autocomplete="on">
+          <label>Email
+            <input id="magicEmail" type="email" required placeholder="you@example.com"/>
+          </label>
+          <div class="row">
+            <button class="btn" type="submit">Send Magic Link</button>
+            <span id="magicStatus" class="status-inline"></span>
+          </div>
+          <p class="muted">Check your inbox for a sign-in link. Configure redirect URLs in Supabase Auth settings.</p>
+        </form>
+      </section>
+
+      <section id="paneReset" hidden>
+        <form id="resetForm" class="login-form" autocomplete="on">
+          <label>Email
+            <input id="resetEmail" type="email" required placeholder="you@example.com"/>
+          </label>
+          <div class="row">
+            <button class="btn" type="submit">Send Reset Email</button>
+            <span id="resetStatus" class="status-inline"></span>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+  <footer class="site-footer"><p>Auth • Supabase</p></footer>
+  <script src="config.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
+  <script src="auth.js" defer></script>
+  <script defer>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW reg failed',e));});}</script>
+</body>
+</html>
