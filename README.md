@@ -128,6 +128,16 @@ To update the service worker after edits, bump `SW_VERSION` in `sw.js` and deplo
 
 Note: If hosting under a repo subpath (GitHub Pages), adjust `PRECACHE_ASSETS` and registration path (e.g., use `navigator.serviceWorker.register('./sw.js')`).
 
+## PWA Manifest
+
+`manifest.webmanifest` added so the site can be installed:
+
+- Update icons in `icons/` (provide 192x192 & 512x512 PNG, optionally additional sizes)
+- Adjust `name`, `short_name`, `theme_color`, and `background_color` as desired
+- `start_url` uses `./index.html` for GitHub Pages subpath compatibility
+
+After adding real icons, test installability via Chrome Lighthouse (Application tab / Manifest).
+
 ## License
 
 MIT
