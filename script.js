@@ -133,9 +133,38 @@
   const lbPrev = document.getElementById('lbPrev');
   const lbNext = document.getElementById('lbNext');
   let lbIndex = -1;
+  let prevFocused = null;
+  let focusables = [];
+  const FOCUS_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+  function collectFocusables() {
+    focusables = Array.from(lb.querySelectorAll(FOCUS_SELECTOR))
+      .filter(el => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1');
+  }
+
+  function trapFocus(e) {
+    if (lb.getAttribute('aria-hidden') === 'true') return;
+    if (e.key !== 'Tab') return;
+    if (!focusables.length) { e.preventDefault(); return; }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !lb.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
 
   function openLightbox(idx) {
     if (!allArt.length) return;
+  prevFocused = document.activeElement;
     lbIndex = ((idx % allArt.length) + allArt.length) % allArt.length;
     const a = allArt[lbIndex];
     lbImg.src = a.image_url || '';
@@ -145,7 +174,9 @@
     lbDate.textContent = a.created_at ? new Date(a.created_at).toLocaleString() : '';
     lb.setAttribute('aria-hidden','false');
     document.body.style.overflow='hidden';
-    lb.focus();
+  collectFocusables();
+  // Focus first focusable (close button likely)
+  (focusables[0] || lb).focus();
   // Preload adjacent
   preloadAdjacent(lbIndex);
   }
@@ -153,6 +184,9 @@
     lb.setAttribute('aria-hidden','true');
     document.body.style.overflow='';
     lbIndex = -1;
+    if (prevFocused && typeof prevFocused.focus === 'function') {
+      prevFocused.focus();
+    }
   }
   function nextArt(delta) { if (lbIndex === -1) return; openLightbox(lbIndex + delta); }
 
@@ -185,6 +219,7 @@
     if (e.key === 'Escape') { closeLightbox(); }
     else if (e.key === 'ArrowRight') { nextArt(1); }
     else if (e.key === 'ArrowLeft') { nextArt(-1); }
+  else if (e.key === 'Tab') { trapFocus(e); }
   });
 
   /* Lazy Loading */
