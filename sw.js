@@ -8,14 +8,14 @@ const API_CACHE = 'api-artworks-v1';
 
 // Core assets to pre-cache (add others as needed)
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/admin.html',
-  '/admin.js',
-  '/config.example.js',
-  '/offline.html'
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './admin.html',
+  './admin.js',
+  './config.example.js',
+  './offline.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   // Navigation requests: network-first fallback to offline page
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/offline.html') || caches.match('/index.html'))
+  fetch(request).catch(() => caches.match('./offline.html') || caches.match('./index.html'))
     );
     return;
   }
