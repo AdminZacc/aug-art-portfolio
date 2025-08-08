@@ -211,26 +211,41 @@
     setTimeout(() => { progressWrap.hidden = true; setProgress(0,''); }, 800);
   }
   async function uploadWithProgress(path, file) {
-    // Supabase storage upload doesn't give granular progress via SDK; simulate based on time & file size.
-    const total = file.size;
-    let uploaded = 0;
-    const tickInterval = 120; // ms
-    let timer = setInterval(() => {
-      // Simulate network throughput ~1MB/s baseline with randomness
-      const chunk = 150000 + Math.random()*250000; // bytes per tick
-      uploaded = Math.min(total, uploaded + chunk);
-      const pct = 20 + (uploaded / total) * 75; // keep first 20% for prep, last 5% for finalize
-      setProgress(pct, 'Uploading');
-    }, tickInterval);
-    try {
-      const res = await supa.storage.from('artworks').upload(path, file, { cacheControl: '3600', upsert: false });
-      clearInterval(timer);
-      setProgress(97, 'Finalizing');
-      return res;
-    } catch (e) {
-      clearInterval(timer);
-      throw e;
+    // Real progress using direct XHR to Supabase Storage REST endpoint.
+    // Ensure we have latest session for bearer token.
+    if (!session) {
+      const { data } = await supa.auth.getSession();
+      session = data.session;
     }
+    return new Promise((resolve, reject) => {
+      const baseUrl = cfg.url.replace(/\/$/, '');
+      const bucket = 'artworks';
+      const url = `${baseUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${path}?upsert=false`;
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('apikey', cfg.anonKey);
+      if (session && session.access_token) {
+        xhr.setRequestHeader('authorization', 'Bearer ' + session.access_token);
+      }
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = 5 + (e.loaded / e.total) * 90; // reserve a little headroom
+            setProgress(pct, 'Uploading');
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setProgress(97, 'Finalizing');
+          let json;
+            try { json = JSON.parse(xhr.responseText || '{}'); } catch { json = {}; }
+          resolve({ data: json, error: null });
+        } else {
+          reject(new Error(`Upload failed (${xhr.status})`));
+        }
+      };
+      xhr.send(file);
+    });
   }
 
   async function loadArtworks() {
