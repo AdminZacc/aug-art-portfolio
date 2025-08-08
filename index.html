@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Art Portfolio</title>
+  <meta name="description" content="Art portfolio" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-title">My Art Portfolio</h1>
+    <nav class="site-nav" aria-label="Main">
+      <button id="refreshBtn" class="btn" type="button" title="Reload artworks">↻ Refresh</button>
+      <div class="filters">
+        <input type="search" id="searchInput" placeholder="Search title…" aria-label="Search artworks by title" />
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section id="status" class="status" aria-live="polite"></section>
+    <section id="gallery" class="gallery" aria-label="Artwork gallery"></section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> My Art Portfolio. Powered by Supabase & GitHub Pages.</p>
+  </footer>
+
+  <!-- Config (create your own config.js from config.example.js) -->
+  <script src="config.js" defer></script>
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" integrity="sha384-P80Vd8yc8BiJ6Fvpx2Ds2+gs9mT/LDzbsJ90ivgjj9Q71Pg9lpIXsW3kxM1Hg5q4" crossorigin="anonymous"></script>
+  <script src="script.js" defer></script>
+</body>
+</html>

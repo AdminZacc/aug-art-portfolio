@@ -1,1 +1,80 @@
 # aug-art-portfolio
+
+Static Art Portfolio (Static + Supabase backend)
+
+Static front-end hosted on GitHub Pages + Supabase backend for artwork data.
+
+## Quick Start
+
+1. Create a Supabase project (free tier) and new table `artworks`:
+
+| column       | type      | notes                       |
+|--------------|-----------|-----------------------------|
+| id           | uuid      | primary key default uuid()  |
+| title        | text      |                             |
+| image_url    | text      | direct image URL            |
+| description  | text      |                             |
+| created_at   | timestamp | default now()               |
+
+SQL helper:
+
+```sql
+create table if not exists public.artworks (
+
+  id uuid primary key default gen_random_uuid(),
+  title text,
+
+  image_url text,
+  description text,
+  created_at timestamp with time zone default now()
+);
+
+```
+
+1. Copy `config.example.js` to `config.js` and fill in:
+
+```js
+window.SUPABASE_CONFIG = {
+
+  url: "https://YOUR_PROJECT_ID.supabase.co",
+  anonKey: "YOUR_PUBLIC_ANON_KEY"
+};
+```
+
+
+Do NOT commit service_role keys.
+
+1. Open `index.html` in a browser (or use a local web server). You should see artworks load.
+
+## GitHub Pages Deployment
+
+1. Push repository to GitHub.
+2. In GitHub repo: Settings → Pages → (Branch: `main` / root) → Save.
+3. Wait for build; site will be at `https://<username>.github.io/<repo>/`.
+4. If using a custom domain: add `CNAME` file with domain and configure DNS (A / ALIAS or CNAME to `username.github.io`).
+
+## Updating Data
+
+Add rows manually in Supabase Table Editor or use SQL / REST / SDK. The site fetches on load and when Refresh is clicked.
+
+
+## Security Notes
+
+- Public anon key is safe to expose; it is row-level-security (RLS) + policies that protect data.
+- Consider enabling RLS and adding read-only policy for `artworks` table like:
+
+```sql
+alter table public.artworks enable row level security;
+create policy "Public read" on public.artworks for select using ( true );
+```
+
+## Future Enhancements
+
+- Pagination or infinite scroll
+- Lightbox modal for images
+- Admin upload page (secured via Supabase Auth)
+- Caching layer (localStorage) for offline viewing
+
+## License
+
+MIT
