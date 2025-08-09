@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Art Portfolio</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <!-- Updated: 2025-08-08 with dashboard and fixed auth -->
   <style>
     :root {
       --bg: #0a0b0d;
@@ -764,13 +765,22 @@
   
   <script src="config.public.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
-  <script src="admin.js" defer></script>
+  <script src="admin.js?v=2" defer></script>
   <script defer>
     if('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW reg failed', e));
       });
     }
+    
+    // Immediate debug check
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, checking elements...');
+      console.log('authForm:', document.getElementById('authForm'));
+      console.log('signupBtn:', document.getElementById('signupBtn'));
+      console.log('magicLinkBtn:', document.getElementById('magicLinkBtn'));
+      console.log('SUPABASE_CONFIG:', window.SUPABASE_CONFIG);
+    });
   </script>
 </body>
 </html>
