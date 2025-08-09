@@ -423,12 +423,21 @@
           const optimizedFile = await optimizeImage(file);
           fileSize = optimizedFile.size;
           
-          await uploadWithProgress(optimizedFile, (progress) => {
-            if (progressFill) progressFill.style.width = `${progress}%`;
-            if (progressText) progressText.textContent = `${Math.round(progress)}%`;
-          });
-
           const fileName = `artwork_${Date.now()}_${file.name}`;
+          
+          // Upload file to Supabase Storage
+          const { data, error: uploadError } = await supa.storage
+            .from('artworks')
+            .upload(fileName, optimizedFile, {
+              onUploadProgress: (progress) => {
+                const percent = (progress.loaded / progress.total) * 100;
+                if (progressFill) progressFill.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `${Math.round(percent)}%`;
+              }
+            });
+
+          if (uploadError) throw uploadError;
+
           const { data: { publicUrl } } = supa.storage
             .from('artworks')
             .getPublicUrl(fileName);
