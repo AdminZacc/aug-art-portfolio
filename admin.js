@@ -126,531 +126,482 @@
 
   // Make showPanel globally available for onclick handlers
   window.showPanel = showPanel;
-    uploadPanel.hidden = !authed;
-    logoutBtn.hidden = !authed;
+
+  // Authentication handling
+  function toggleAuthUI() {
+    const authenticated = !!session;
     
-    // Update upload tab visibility
-    const uploadTab = document.getElementById('upload-tab');
-    if (uploadTab) {
-      if (authed) {
-        uploadTab.style.display = 'block';
-        // Show the upload panel, hide auth panel within upload tab
-        if (authPanel) authPanel.style.display = 'none';
-        if (uploadPanel) uploadPanel.style.display = 'block';
-      } else {
-        uploadTab.style.display = 'block'; // Keep visible to show auth form
-        if (authPanel) authPanel.style.display = 'block';
-        if (uploadPanel) uploadPanel.style.display = 'none';
-      }
-    }
+    if (authSection) authSection.hidden = authenticated;
+    if (dashboardNav) dashboardNav.hidden = !authenticated;
+    if (logoutBtn) logoutBtn.hidden = !authenticated;
     
-    // Redirect if not authenticated to central auth page
-    if (!authed) {
-      // Defer a tick so initial DOM paints
-      setTimeout(()=>{
-        if (!location.pathname.endsWith('/auth.html')) {
-          window.location.href = './auth.html';
-        }
-      }, 0);
+    if (authenticated) {
+      showPanel('overview');
     }
   }
 
   async function refreshSession() {
-    const { data } = await supa.auth.getSession();
-    session = data.session;
-    toggleAuthUI();
-    if (session) {
-      // Load overview by default, but defer to avoid race conditions
-      setTimeout(() => loadOverview(), 100);
+    try {
+      const { data: { session: currentSession } } = await supa.auth.getSession();
+      session = currentSession;
+      toggleAuthUI();
+      return session;
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      if (authStatus) showStatus(authStatus, 'Authentication error', 'error');
+      return null;
     }
   }
 
-  loginForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    set(loginStatus, 'Signing in...');
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
+  // Overview Panel Functions
+  async function loadOverviewData() {
     try {
-      const { error } = await supa.auth.signInWithPassword({ email, password });
+      const { data: artworks, error } = await supa
+        .from('artworks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      set(loginStatus, 'Signed in.');
-      await refreshSession();
-    } catch(err) {
-      console.error(err);
-      set(loginStatus, err.message || 'Failed.');
-    }
-  });
 
-  logoutBtn.addEventListener('click', async () => {
-    await supa.auth.signOut();
-    session = null;
-    toggleAuthUI();
-  });
-
-  // Connection test
-  if (connTestBtn) {
-    connTestBtn.addEventListener('click', async () => {
-      if (!cfg || !cfg.url || !cfg.anonKey) { set(connStatus,'Missing config.js'); return; }
-      set(connStatus, 'Testing...');
-      connTestBtn.disabled = true;
-      const t0 = performance.now();
-      try {
-        const { data, error } = await supa.from('artworks').select('id').limit(1);
-        const ms = Math.round(performance.now() - t0);
-        if (error) throw error;
-        set(connStatus, `OK (${ms} ms${data && data.length ? ', 1+ rows' : ''})`);
-      } catch (err) {
-        console.error(err);
-        set(connStatus, (err.message||'Error').slice(0,120));
-      } finally {
-        connTestBtn.disabled = false;
-      }
-    });
-  }
-
-  artForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    set(formStatus, 'Uploading...');
-    const fd = new FormData(artForm);
-    const title = fd.get('title').toString().trim();
-    const description = fd.get('description').toString().trim();
-    const extUrl = fd.get('image_url').toString().trim();
-    const file = fd.get('file');
-
-    if (!title) { set(formStatus,'Title required'); return; }
-
-    try {
-      let image_url = extUrl;
-      if (file && file.size) {
-        let uploadFile = file;
-        if (!skipOptimizeChk.checked) {
-          try {
-            startProgress('Optimizing', 5);
-            uploadFile = await optimizeImage(file);
-          } catch (optErr) {
-            console.warn('Optimization failed, using original', optErr);
-          }
-        }
-        startProgress('Uploading', 15);
-        const path = `${Date.now()}-${(uploadFile.name || file.name).replace(/[^a-zA-Z0-9._-]/g,'_')}`;
-        const { data: up, error: upErr } = await uploadWithProgress(path, uploadFile);
-        if (upErr) throw upErr;
-        const { data: pub } = supa.storage.from('artworks').getPublicUrl(up.path);
-        image_url = pub.publicUrl;
-      }
-      const { error: insertErr } = await supa.from('artworks').insert({ title, description, image_url });
-      if (insertErr) throw insertErr;
-      set(formStatus, 'Saved ✓');
-      artForm.reset();
-      clearPreview();
-      finishProgress();
-      // Refresh gallery view if currently active
-      if (document.getElementById('gallery-tab')?.classList.contains('active')) {
-        loadGalleryView();
-      }
-      // Update overview if currently active
-      if (document.getElementById('overview-tab')?.classList.contains('active')) {
-        loadOverview();
-      }
-    } catch(err) {
-      console.error(err);
-      set(formStatus, err.message || 'Error');
-      finishProgress(true);
-    }
-  });
-
-  function clearPreview(){
-    previewWrap.innerHTML='';
-    previewWrap.hidden = true;
-  }
-
-  function showPreviewFromFile(file) {
-    if (!file) { clearPreview(); return; }
-    const url = URL.createObjectURL(file);
-    previewWrap.hidden = false;
-    previewWrap.innerHTML = `<div class="preview-item"><img src="${url}" alt="Preview"><div class="meta"><span>${(file.size/1024).toFixed(1)} KB</span></div></div>`;
-  }
-
-  function showPreviewFromExternal(url) {
-    if (!url) { if (!fileInput.files.length) clearPreview(); return; }
-    if (fileInput.files.length) return; // file takes precedence
-    previewWrap.hidden = false;
-    previewWrap.innerHTML = `<div class="preview-item"><img src="${url}" alt="Preview from URL" referrerpolicy="no-referrer"><div class="meta"><span>External</span></div></div>`;
-  }
-
-  fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (file) {
-      extUrlInput.value='';
-      showPreviewFromFile(file);
-    } else {
-      clearPreview();
-      showPreviewFromExternal(extUrlInput.value.trim());
-    }
-  });
-
-  extUrlInput.addEventListener('input', () => {
-    if (fileInput.files.length) return; // ignore if file chosen
-    const val = extUrlInput.value.trim();
-    if (/^https?:\/\//i.test(val)) {
-      showPreviewFromExternal(val);
-    } else if (!val) {
-      clearPreview();
-    }
-  });
-
-  clearImageBtn.addEventListener('click', () => {
-    fileInput.value='';
-    extUrlInput.value='';
-    clearPreview();
-  });
-
-  // Drag & drop
-  ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); }));
-  ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); if (ev==='drop') handleDrop(e); dropZone.classList.remove('dragover'); }));
-
-  function handleDrop(e){
-    const files = e.dataTransfer.files;
-    if (!files || !files.length) return;
-    fileInput.files = files; // assign
-    fileInput.dispatchEvent(new Event('change'));
-  }
-
-  async function optimizeImage(file) {
-    const processable = /^image\/(jpe?g|png|webp)$/i.test(file.type);
-    if (!processable) return file; // Skip GIF/SVG/others
-    const maxDim = Math.min(6000, Math.max(256, parseInt(maxDimInput.value,10) || 1600));
-    let quality = parseFloat(qualityInput.value);
-    if (isNaN(quality) || quality < 0.4 || quality > 1) quality = 0.8;
-    const bmp = await createImageBitmap(file);
-    const { width, height } = bmp;
-    const scale = Math.min(1, maxDim / Math.max(width, height));
-    const targetW = Math.round(width * scale);
-    const targetH = Math.round(height * scale);
-    const canvas = document.createElement('canvas');
-    canvas.width = targetW; canvas.height = targetH;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bmp, 0, 0, targetW, targetH);
-    // Decide output format; prefer WebP unless original is JPEG and near-target size
-    let outType = 'image/webp';
-    if (file.type === 'image/jpeg' && scale === 1) outType = 'image/jpeg';
-    const blob = await new Promise((res, rej) => canvas.toBlob(b => b?res(b):rej(new Error('Blob failed')), outType, quality));
-    const newNameBase = file.name.replace(/\.[^.]+$/, '');
-    const ext = outType === 'image/webp' ? '.webp' : '.jpg';
-    return new File([blob], newNameBase + ext, { type: outType, lastModified: Date.now() });
-  }
-
-  function startProgress(label, minDurationMs=10) {
-    progressWrap.hidden = false;
-    setProgress(5, label);
-    progressWrap.dataset.start = Date.now();
-    progressWrap.dataset.min = minDurationMs;
-  }
-  function setProgress(pct, label) {
-    progressBar.style.width = pct + '%';
-    progressText.textContent = (label? label+ ' ' : '') + Math.min(100, Math.round(pct)) + '%';
-  }
-  function finishProgress(error=false) {
-    if (progressWrap.hidden) return;
-    setProgress(error?100:100, error? 'Error' : 'Done');
-    setTimeout(() => { progressWrap.hidden = true; setProgress(0,''); }, 800);
-  }
-  async function uploadWithProgress(path, file) {
-    // Real progress using direct XHR to Supabase Storage REST endpoint.
-    // Ensure we have latest session for bearer token.
-    if (!session) {
-      const { data } = await supa.auth.getSession();
-      session = data.session;
-    }
-    return new Promise((resolve, reject) => {
-      const baseUrl = cfg.url.replace(/\/$/, '');
-      const bucket = 'artworks';
-      const url = `${baseUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${path}?upsert=false`;
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', url, true);
-      xhr.setRequestHeader('apikey', cfg.anonKey);
-      if (session && session.access_token) {
-        xhr.setRequestHeader('authorization', 'Bearer ' + session.access_token);
-      }
-      xhr.upload.onprogress = e => {
-        if (e.lengthComputable) {
-          const pct = 5 + (e.loaded / e.total) * 90; // reserve a little headroom
-            setProgress(pct, 'Uploading');
-        }
-      };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setProgress(97, 'Finalizing');
-          let json;
-            try { json = JSON.parse(xhr.responseText || '{}'); } catch { json = {}; }
-          resolve({ data: json, error: null });
-        } else {
-          reject(new Error(`Upload failed (${xhr.status})`));
-        }
-      };
-      xhr.send(file);
-    });
-  }
-
-  refreshSession();
-
-  // Dashboard functionality
-  window.switchTab = function(tabName) {
-    // Update nav buttons
-    document.querySelectorAll('.dashboard-nav button').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tabName);
-    });
-    
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.toggle('active', tab.id === `${tabName}-tab`);
-    });
-    
-    // Load tab-specific content
-    if (tabName === 'overview') loadOverview();
-    else if (tabName === 'gallery') loadGalleryView();
-    else if (tabName === 'settings') loadSettings();
-  };
-
-  async function loadOverview() {
-    try {
-      const { data: artworks } = await supa.from('artworks').select('*');
-      const totalCount = artworks?.length || 0;
-      
-      // Calculate storage usage (rough estimate)
-      let storageUsed = 0;
-      if (artworks) {
-        artworks.forEach(art => {
-          if (art.image_url && art.image_url.includes('supabase')) {
-            storageUsed += 500; // Rough estimate of 500KB per image
-          }
-        });
-      }
-      
-      // Recent uploads (last 7 days)
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const recentCount = artworks?.filter(art => 
-        new Date(art.created_at) > weekAgo
-      ).length || 0;
-      
       // Update stats
-      document.getElementById('total-artworks').textContent = totalCount;
-      document.getElementById('storage-used').textContent = `${(storageUsed/1024).toFixed(1)} MB`;
-      document.getElementById('recent-uploads').textContent = recentCount;
-      
-      // Test connection for status
-      await testConnectionStatus();
-      
-      // Update activity feed
-      updateActivityFeed(artworks);
-    } catch (error) {
-      console.error('Overview load error:', error);
-    }
-  }
+      const totalArtworks = artworks.length;
+      const recentUploads = artworks.filter(art => {
+        const createdDate = new Date(art.created_at);
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return createdDate > monthAgo;
+      }).length;
 
-  async function testConnectionStatus() {
-    try {
-      const start = Date.now();
-      const { data } = await supa.from('artworks').select('id').limit(1);
-      const latency = Date.now() - start;
-      document.getElementById('connection-status').textContent = `${latency}ms`;
-    } catch (error) {
-      document.getElementById('connection-status').textContent = 'Error';
-    }
-  }
+      const totalSize = artworks.reduce((sum, art) => sum + (art.file_size || 0), 0);
+      const avgSize = totalArtworks > 0 ? totalSize / totalArtworks : 0;
 
-  function updateActivityFeed(artworks) {
-    const activityContainer = document.getElementById('recent-activity');
-    if (!artworks || artworks.length === 0) {
-      activityContainer.innerHTML = `
-        <div class="activity-item">
-          <div class="activity-icon">📝</div>
-          <div class="activity-content">
-            <div class="activity-title">No artworks yet</div>
-            <div class="activity-meta">Start by uploading your first artwork</div>
-          </div>
-        </div>
-      `;
-      return;
-    }
-    
-    // Sort by creation date and take last 5
-    const recent = artworks
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 5);
-    
-    activityContainer.innerHTML = recent.map(art => `
-      <div class="activity-item">
-        <div class="activity-icon">🎨</div>
-        <div class="activity-content">
-          <div class="activity-title">Uploaded "${esc(art.title)}"</div>
-          <div class="activity-meta">${formatDate(art.created_at)}</div>
-        </div>
-      </div>
-    `).join('');
-  }
+      document.getElementById('totalArtworks').textContent = totalArtworks;
+      document.getElementById('storageUsed').textContent = formatFileSize(totalSize);
+      document.getElementById('recentUploads').textContent = recentUploads;
+      document.getElementById('avgFileSize').textContent = formatFileSize(avgSize);
 
-  async function loadGalleryView() {
-    const grid = document.getElementById('artworkGrid');
-    grid.innerHTML = '<p style="color:var(--text-dim);grid-column:1/-1;text-align:center;padding:2rem;">Loading...</p>';
-    
-    try {
-      const { data: artworks, error } = await supa.from('artworks').select('*').order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      if (!artworks || artworks.length === 0) {
-        grid.innerHTML = `
-          <div style="grid-column:1/-1;text-align:center;padding:3rem;">
-            <h4 style="margin:0 0 1rem;color:var(--text-dim);">No artworks yet</h4>
-            <button class="btn" onclick="switchTab('upload')">📤 Upload Your First Artwork</button>
-          </div>
-        `;
-        return;
-      }
-      
-      grid.innerHTML = artworks.map(art => `
-        <div class="artwork-card">
-          <img src="${esc(art.image_url)}" alt="${esc(art.title)}" loading="lazy" />
-          <div class="artwork-card-body">
-            <h4 class="artwork-card-title">${esc(art.title)}</h4>
-            <p class="artwork-card-desc">${esc(art.description || 'No description')}</p>
-            <div class="artwork-card-meta">Created: ${formatDate(art.created_at)}</div>
-            <div class="artwork-card-actions">
-              <button class="btn" onclick="editArtwork(${art.id})">✏️ Edit</button>
-              <button class="btn danger" onclick="deleteArtworkCard(${art.id}, this)">🗑️ Delete</button>
+      // Show recent activity
+      const recentActivity = document.getElementById('recentActivity');
+      if (recentActivity) {
+        recentActivity.innerHTML = artworks.slice(0, 6).map(artwork => `
+          <div class="artwork-card">
+            <img src="${artwork.image_url}" alt="${artwork.title}" loading="lazy">
+            <div class="artwork-card-content">
+              <h3>${artwork.title}</h3>
+              <p>${artwork.medium || 'Unknown medium'}</p>
+              <p>${formatDate(artwork.created_at)}</p>
             </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
+
     } catch (error) {
-      grid.innerHTML = `<p style="color:#ff6b6b;grid-column:1/-1;text-align:center;">Error: ${error.message}</p>`;
+      console.error('Error loading overview:', error);
     }
   }
 
-  function loadSettings() {
-    const userEmail = session?.user?.email || 'Not signed in';
-    document.getElementById('user-email').textContent = userEmail;
+  // Gallery Panel Functions
+  async function loadGalleryData() {
+    if (galleryLoading) galleryLoading.hidden = false;
+    if (galleryEmpty) galleryEmpty.hidden = true;
+    if (galleryGrid) galleryGrid.innerHTML = '';
+
+    try {
+      const { data: artworks, error } = await supa
+        .from('artworks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (galleryLoading) galleryLoading.hidden = true;
+
+      if (artworks.length === 0) {
+        if (galleryEmpty) galleryEmpty.hidden = false;
+        return;
+      }
+
+      if (galleryGrid) {
+        galleryGrid.innerHTML = artworks.map(artwork => `
+          <div class="artwork-card" data-id="${artwork.id}">
+            <img src="${artwork.image_url}" alt="${artwork.title}" loading="lazy">
+            <div class="artwork-card-content">
+              <h3>${artwork.title}</h3>
+              <p>${artwork.medium || 'Unknown medium'}</p>
+              <p>${artwork.year || 'Unknown year'}</p>
+              <p>${artwork.dimensions || ''}</p>
+              <div class="artwork-card-actions">
+                <button class="edit-btn" onclick="editArtwork('${artwork.id}')">✏️ Edit</button>
+                <button class="delete-btn" onclick="deleteArtwork('${artwork.id}')">🗑️ Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+    } catch (error) {
+      console.error('Error loading gallery:', error);
+      if (galleryLoading) galleryLoading.hidden = true;
+      if (galleryEmpty) galleryEmpty.hidden = false;
+    }
   }
 
-  window.refreshGallery = loadGalleryView;
-  window.testConnection = async function() {
-    connTestBtn.disabled = true;
-    connTestBtn.textContent = 'Testing...';
-    set(connStatus, '⏳ Testing...');
+  // Settings Panel Functions
+  function loadSettingsData() {
+    if (session && session.user) {
+      if (userEmail) userEmail.textContent = session.user.email || 'Unknown';
+      if (lastSignIn) lastSignIn.textContent = formatDate(session.user.last_sign_in_at || session.user.created_at);
+    }
+  }
+
+  // Upload Functions
+  function optimizeImage(file, maxDimension = 1920, quality = 0.85) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        const { width, height } = img;
+        let { width: newWidth, height: newHeight } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          const ratio = Math.min(maxDimension / width, maxDimension / height);
+          newWidth = width * ratio;
+          newHeight = height * ratio;
+        }
+
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function uploadWithProgress(file, onProgress) {
+    const fileName = `artwork_${Date.now()}_${file.name}`;
     
-    try {
-      const start = Date.now();
-      const { data, error } = await supa.from('artworks').select('id').limit(1);
-      const elapsed = Date.now() - start;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
       
-      if (error) throw error;
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100;
+          onProgress(progress);
+        }
+      });
       
-      set(connStatus, `✅ OK (${elapsed}ms)`);
-      await testConnectionStatus(); // Update overview if visible
-    } catch (error) {
-      set(connStatus, `❌ ${error.message}`);
-    } finally {
-      connTestBtn.disabled = false;
-      connTestBtn.textContent = 'Test Supabase';
-    }
-  };
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        }
+      });
+      
+      xhr.addEventListener('error', () => reject(new Error('Network error')));
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      xhr.open('POST', `${cfg.url}/storage/v1/object/artworks/${fileName}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+      xhr.setRequestHeader('apikey', cfg.anonKey);
+      xhr.send(formData);
+    });
+  }
 
-  // Edit artwork functionality
-  window.editArtwork = async function(id) {
+  // CRUD Operations
+  async function editArtwork(id) {
     try {
-      const { data: artwork, error } = await supa.from('artworks').select('*').eq('id', id).single();
-      
+      const { data: artwork, error } = await supa
+        .from('artworks')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       if (error) throw error;
-      
+
+      // Populate edit form
       document.getElementById('editId').value = artwork.id;
-      document.getElementById('editTitle').value = artwork.title;
+      document.getElementById('editTitle').value = artwork.title || '';
+      document.getElementById('editMedium').value = artwork.medium || '';
+      document.getElementById('editYear').value = artwork.year || '';
+      document.getElementById('editDimensions').value = artwork.dimensions || '';
       document.getElementById('editDescription').value = artwork.description || '';
-      
-      document.getElementById('editModal').classList.add('active');
+      document.getElementById('editPreview').src = artwork.image_url;
+
+      if (editModal) editModal.hidden = false;
+
     } catch (error) {
-      alert('Error loading artwork: ' + error.message);
+      console.error('Error loading artwork for edit:', error);
+      alert('Error loading artwork details');
     }
-  };
-
-  window.closeEditModal = function() {
-    document.getElementById('editModal').classList.remove('active');
-  };
-
-  // Edit form submission
-  document.getElementById('editForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const id = document.getElementById('editId').value;
-    const title = document.getElementById('editTitle').value;
-    const description = document.getElementById('editDescription').value;
-    
-    try {
-      const { error } = await supa.from('artworks').update({
-        title,
-        description
-      }).eq('id', id);
-      
-      if (error) throw error;
-      
-      closeEditModal();
-      if (document.getElementById('gallery-tab').classList.contains('active')) {
-        loadGalleryView();
-      }
-      if (document.getElementById('overview-tab').classList.contains('active')) {
-        loadOverview();
-      }
-    } catch (error) {
-      alert('Error updating artwork: ' + error.message);
-    }
-  });
-
-  window.deleteArtworkCard = async function(id, btn) {
-    if (!confirm('Delete this artwork? This cannot be undone.')) return;
-    
-    const card = btn.closest('.artwork-card');
-    btn.disabled = true;
-    btn.textContent = '...';
-    
-    try {
-      const { error } = await supa.from('artworks').delete().eq('id', id);
-      
-      if (error) throw error;
-      
-      card.remove();
-      
-      // Update overview if visible
-      if (document.getElementById('overview-tab').classList.contains('active')) {
-        loadOverview();
-      }
-    } catch (error) {
-      alert('Error deleting artwork: ' + error.message);
-      btn.disabled = false;
-      btn.textContent = '🗑️ Delete';
-    }
-  };
-
-  function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
   }
 
-  // Tab navigation
-  document.querySelectorAll('.dashboard-nav button').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  async function deleteArtwork(id) {
+    if (!confirm('Are you sure you want to delete this artwork?')) return;
+
+    try {
+      const { error } = await supa
+        .from('artworks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      loadGalleryData();
+      loadOverviewData();
+
+    } catch (error) {
+      console.error('Error deleting artwork:', error);
+      alert('Error deleting artwork');
+    }
+  }
+
+  // Make CRUD functions globally available
+  window.editArtwork = editArtwork;
+  window.deleteArtwork = deleteArtwork;
+
+  // Event Listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    // Navigation buttons
+    document.getElementById('navOverview')?.addEventListener('click', () => showPanel('overview'));
+    document.getElementById('navUpload')?.addEventListener('click', () => showPanel('upload'));
+    document.getElementById('navGallery')?.addEventListener('click', () => showPanel('gallery'));
+    document.getElementById('navSettings')?.addEventListener('click', () => showPanel('settings'));
+
+    // Auth form
+    authForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const { error } = await supa.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        
+        showStatus(authStatus, 'Signed in successfully!', 'success');
+      } catch (error) {
+        showStatus(authStatus, error.message, 'error');
+      }
+    });
+
+    // Upload form
+    uploadForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const title = document.getElementById('title').value;
+      const medium = document.getElementById('medium').value;
+      const year = document.getElementById('year').value;
+      const dimensions = document.getElementById('dimensions').value;
+      const description = document.getElementById('description').value;
+      const imageUrl = document.getElementById('imageUrl').value;
+      const file = fileInput?.files[0];
+
+      if (!title) {
+        alert('Title is required');
+        return;
+      }
+
+      if (!file && !imageUrl) {
+        alert('Please select a file or provide an image URL');
+        return;
+      }
+
+      try {
+        if (progressContainer) progressContainer.hidden = false;
+        
+        let finalImageUrl = imageUrl;
+        let fileSize = 0;
+
+        if (file) {
+          const optimizedFile = await optimizeImage(file);
+          fileSize = optimizedFile.size;
+          
+          await uploadWithProgress(optimizedFile, (progress) => {
+            if (progressFill) progressFill.style.width = `${progress}%`;
+            if (progressText) progressText.textContent = `${Math.round(progress)}%`;
+          });
+
+          const fileName = `artwork_${Date.now()}_${file.name}`;
+          const { data: { publicUrl } } = supa.storage
+            .from('artworks')
+            .getPublicUrl(fileName);
+          
+          finalImageUrl = publicUrl;
+        }
+
+        const { error } = await supa
+          .from('artworks')
+          .insert({
+            title,
+            medium,
+            year: year ? parseInt(year) : null,
+            dimensions,
+            description,
+            image_url: finalImageUrl,
+            file_size: fileSize
+          });
+
+        if (error) throw error;
+
+        uploadForm.reset();
+        if (progressContainer) progressContainer.hidden = true;
+        if (previewContainer) previewContainer.hidden = true;
+        
+        alert('Artwork uploaded successfully!');
+        
+        if (galleryPanel && !galleryPanel.hidden) loadGalleryData();
+        if (overviewPanel && !overviewPanel.hidden) loadOverviewData();
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+        if (progressContainer) progressContainer.hidden = true;
+      }
+    });
+
+    // Edit form
+    editForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('editId').value;
+      const title = document.getElementById('editTitle').value;
+      const medium = document.getElementById('editMedium').value;
+      const year = document.getElementById('editYear').value;
+      const dimensions = document.getElementById('editDimensions').value;
+      const description = document.getElementById('editDescription').value;
+
+      try {
+        const { error } = await supa
+          .from('artworks')
+          .update({
+            title,
+            medium,
+            year: year ? parseInt(year) : null,
+            dimensions,
+            description
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        if (editModal) editModal.hidden = true;
+        loadGalleryData();
+        loadOverviewData();
+
+      } catch (error) {
+        console.error('Update error:', error);
+        alert('Update failed: ' + error.message);
+      }
+    });
+
+    // File input and drag & drop
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (preview) preview.src = e.target.result;
+          if (previewContainer) previewContainer.hidden = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    dropZone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone?.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      
+      const files = Array.from(e.dataTransfer.files);
+      const imageFile = files.find(file => file.type.startsWith('image/'));
+      
+      if (imageFile && fileInput) {
+        const dt = new DataTransfer();
+        dt.items.add(imageFile);
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
+
+    dropZone?.addEventListener('click', () => fileInput?.click());
+
+    // Modal controls
+    closeEdit?.addEventListener('click', () => {
+      if (editModal) editModal.hidden = true;
+    });
+
+    cancelEdit?.addEventListener('click', () => {
+      if (editModal) editModal.hidden = true;
+    });
+
+    // Settings controls
+    signOut?.addEventListener('click', async () => {
+      await supa.auth.signOut();
+    });
+
+    logoutBtn?.addEventListener('click', async () => {
+      await supa.auth.signOut();
+    });
+
+    clearCache?.addEventListener('click', () => {
+      if (confirm('Clear all cached data?')) {
+        localStorage.clear();
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+        alert('Cache cleared');
+      }
+    });
+
+    refreshGallery?.addEventListener('click', loadGalleryData);
+
+    // Search and sort
+    searchArtworks?.addEventListener('input', debounce(() => {
+      // TODO: Implement search filtering
+    }, 300));
+
+    sortBy?.addEventListener('change', () => {
+      // TODO: Implement sorting
+    });
+
+    // Auth state listener
+    supa.auth.onAuthStateChange((event, newSession) => {
+      session = newSession;
+      toggleAuthUI();
+    });
+
+    // Initialize
+    refreshSession();
   });
 
-  // Load overview by default
-  setTimeout(() => {
-    if (session) loadOverview();
-  }, 100);
+  // Utility function for debouncing
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
 })();
