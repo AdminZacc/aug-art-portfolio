@@ -168,10 +168,28 @@
   // Overview Panel Functions
   async function loadOverviewData() {
     try {
+      console.log('Loading overview data...');
+      
+      // Test storage bucket first
+      try {
+        const { data: buckets, error: bucketError } = await supa.storage.listBuckets();
+        console.log('Available storage buckets:', buckets, bucketError);
+        
+        if (!buckets || !buckets.find(b => b.name === 'artworks')) {
+          console.warn('❌ Storage bucket "artworks" not found! You need to create it in Supabase.');
+        } else {
+          console.log('✅ Storage bucket "artworks" exists');
+        }
+      } catch (storageError) {
+        console.error('Error checking storage buckets:', storageError);
+      }
+      
       const { data: artworks, error } = await supa
         .from('artworks')
         .select('*')
         .order('created_at', { ascending: false });
+
+      console.log('Artworks query result:', { artworks, error });
 
       if (error) throw error;
 
@@ -458,10 +476,12 @@
         let fileSize = 0;
 
         if (file) {
+          console.log('Starting file upload process...', file);
           const optimizedFile = await optimizeImage(file);
           fileSize = optimizedFile.size;
           
           const fileName = `artwork_${Date.now()}_${file.name}`;
+          console.log('Uploading file as:', fileName);
           
           // Upload file to Supabase Storage
           const { data, error: uploadError } = await supa.storage
@@ -469,17 +489,24 @@
             .upload(fileName, optimizedFile, {
               onUploadProgress: (progress) => {
                 const percent = (progress.loaded / progress.total) * 100;
+                console.log('Upload progress:', percent);
                 if (progressFill) progressFill.style.width = `${percent}%`;
                 if (progressText) progressText.textContent = `${Math.round(percent)}%`;
               }
             });
 
-          if (uploadError) throw uploadError;
+          console.log('Upload response:', { data, uploadError });
+
+          if (uploadError) {
+            console.error('Upload error details:', uploadError);
+            throw uploadError;
+          }
 
           const { data: { publicUrl } } = supa.storage
             .from('artworks')
             .getPublicUrl(fileName);
           
+          console.log('Generated public URL:', publicUrl);
           finalImageUrl = publicUrl;
         }
 
