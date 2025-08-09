@@ -1,6 +1,6 @@
 /* Service Worker for aug-art-portfolio */
 /* Version */
-const SW_VERSION = 'v1.0.0';
+const SW_VERSION = 'v1.0.1';
 const PRECACHE_NAME = `precache-${SW_VERSION}`;
 const RUNTIME_CACHE = 'runtime';
 const IMAGE_CACHE = 'images-v1';
@@ -43,7 +43,8 @@ function isImageRequest(request) {
 function isSupabaseArtworks(request) {
   if (request.method !== 'GET') return false;
   const u = new URL(request.url);
-  // Basic match: REST endpoint contains /rest/v1/artworks
+  // Only handle same-origin API (avoid intercepting cross-origin Supabase calls)
+  if (u.origin !== self.location.origin) return false;
   return /\/rest\/v1\/artworks/i.test(u.pathname);
 }
 
