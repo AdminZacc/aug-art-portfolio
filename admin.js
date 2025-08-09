@@ -282,39 +282,6 @@
     });
   }
 
-  async function uploadWithProgress(file, onProgress) {
-    const fileName = `artwork_${Date.now()}_${file.name}`;
-    
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = (e.loaded / e.total) * 100;
-          onProgress(progress);
-        }
-      });
-      
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          reject(new Error(`Upload failed: ${xhr.statusText}`));
-        }
-      });
-      
-      xhr.addEventListener('error', () => reject(new Error('Network error')));
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      xhr.open('POST', `${cfg.url}/storage/v1/object/artworks/${fileName}`);
-      xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-      xhr.setRequestHeader('apikey', cfg.anonKey);
-      xhr.send(formData);
-    });
-  }
-
   // CRUD Operations
   async function editArtwork(id) {
     try {
