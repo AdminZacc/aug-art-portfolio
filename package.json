@@ -5,7 +5,10 @@
   "description": "Static art portfolio (GitHub Pages + Supabase) with PWA features.",
   "scripts": {
     "dev": "http-server -p 5173 -c-1 .",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "build:config": "node generate-config.js",
+    "prebuild": "npm run build:config",
+    "predev": "npm run build:config"
   },
   "devDependencies": {
     "http-server": "^14.1.1",

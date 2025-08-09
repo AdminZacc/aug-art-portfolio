@@ -44,16 +44,19 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your-anon-public-key-here
 ```
 
-1. **Config Setup**: Copy `config.example.js` to `config.js` and fill in:
+1. **Generate Config**: The `config.js` file is auto-generated from `.env`:
 
-```js
-window.SUPABASE_CONFIG = {
-  url: "https://your-project-id.supabase.co",
-  anonKey: "your-anon-public-key"
-};
+```bash
+npm run build:config
 ```
 
-**Note**: Use `.env` for server-side/build environments, `config.js` for browser runtime.
+Or it will auto-generate when you run:
+
+```bash
+npm run dev
+```
+
+**Note**: Both `.env` and `config.js` are gitignored for security. The config is generated from .env each time you start the dev server.
 
 Do NOT commit service_role keys.
 
