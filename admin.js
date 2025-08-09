@@ -41,6 +41,15 @@
     uploadPanel.hidden = !authed;
     listPanel.hidden = !authed;
     logoutBtn.hidden = !authed;
+    // Redirect if not authenticated to central auth page
+    if (!authed) {
+      // Defer a tick so initial DOM paints
+      setTimeout(()=>{
+        if (!location.pathname.endsWith('/auth.html')) {
+          window.location.href = './auth.html';
+        }
+      }, 0);
+    }
   }
 
   async function refreshSession() {
