@@ -26,7 +26,7 @@
     return;
   }
   // Guard against placeholders to avoid confusing network errors
-  if (/YOUR_PROJECT_ID/i.test(url) || /^YOUR_/i.test(anonKey)) {
+  if (/example-project/i.test(url) || /example-anon-key/i.test(anonKey)) {
     setStatus('Update config.js with your real Supabase URL and anon key.');
     return;
   }
