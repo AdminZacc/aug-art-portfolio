@@ -31,15 +31,29 @@ create table if not exists public.artworks (
 
 ```
 
-1. Copy `config.example.js` to `config.js` and fill in:
+1. **Environment Setup**: Copy `.env.example` to `.env` and fill in your Supabase credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-public-key-here
+```
+
+1. **Config Setup**: Copy `config.example.js` to `config.js` and fill in:
 
 ```js
 window.SUPABASE_CONFIG = {
-
-  url: "https://fjndrnjdjluuxebgpiuh.supabase.co",
-  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbmRybmpkamx1dXhlYmdwaXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2OTAyMTEsImV4cCI6MjA3MDI2NjIxMX0.24zFSEfGCFTsRTQHhw5yByE3rMjorCeM3784KeK72b0"
+  url: "https://your-project-id.supabase.co",
+  anonKey: "your-anon-public-key"
 };
 ```
+
+**Note**: Use `.env` for server-side/build environments, `config.js` for browser runtime.
 
 Do NOT commit service_role keys.
 
