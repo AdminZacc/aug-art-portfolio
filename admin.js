@@ -549,6 +549,19 @@
       if (editModal) editModal.hidden = true;
     });
 
+    // Modal backdrop click and escape key handling
+    editModal?.addEventListener('click', (e) => {
+      if (e.target === editModal) {
+        editModal.hidden = true;
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && editModal && !editModal.hidden) {
+        editModal.hidden = true;
+      }
+    });
+
     // Settings controls
     signOut?.addEventListener('click', async () => {
       await supa.auth.signOut();
