@@ -75,7 +75,7 @@
     set(magicStatus,'Sending magic link...');
     const email = document.getElementById('magicEmail').value.trim();
     try {
-      const { error } = await supa.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + '/admin.html' } });
+      const { error } = await supa.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + '/aug-art-portfolio/admin.html' } });
       if (error) throw error;
       set(magicStatus, 'Check your email for the link.');
     } catch (err) {
@@ -92,7 +92,7 @@
     set(resetStatus,'Sending reset email...');
     const email = document.getElementById('resetEmail').value.trim();
     try {
-      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/auth.html' });
+      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/aug-art-portfolio/auth.html' });
       if (error) throw error;
       set(resetStatus, 'If the email exists, a reset link has been sent.');
     } catch (err) {
