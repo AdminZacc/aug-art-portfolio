@@ -16,6 +16,7 @@ const PRECACHE_ASSETS = [
   './admin.js',
   './auth.html',
   './auth.js',
+  './config.public.js',
   './config.example.js',
   './offline.html'
 ];
