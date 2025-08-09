@@ -314,8 +314,25 @@
 
   // CRUD Operations
   async function editArtwork(id) {
+    console.log('=== EDIT ARTWORK FUNCTION CALLED ===');
+    console.log('Artwork ID:', id);
+    console.log('Supabase client exists:', !!supa);
+    console.log('Session exists:', !!session);
+    
+    if (!supa) {
+      console.error('❌ Supabase client not initialized');
+      alert('Error: Database connection not available');
+      return;
+    }
+    
+    if (!session) {
+      console.error('❌ No active session');
+      alert('Error: You must be logged in to edit artwork');
+      return;
+    }
+
     try {
-      console.log('Loading artwork for edit:', id);
+      console.log('Making database query for artwork:', id);
       
       const { data: artwork, error } = await supa
         .from('artworks')
@@ -323,47 +340,112 @@
         .eq('id', id)
         .single();
 
-      console.log('Edit artwork query result:', { artwork, error });
+      console.log('Database query response:', { artwork, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      if (!artwork) {
+        console.error('No artwork found with ID:', id);
+        alert('Artwork not found');
+        return;
+      }
+
+      console.log('Found artwork:', artwork);
+
+      // Check if edit form elements exist
+      const editId = document.getElementById('editId');
+      const editTitle = document.getElementById('editTitle');
+      const editMedium = document.getElementById('editMedium');
+      const editYear = document.getElementById('editYear');
+      const editDimensions = document.getElementById('editDimensions');
+      const editDescription = document.getElementById('editDescription');
+      const editPreview = document.getElementById('editPreview');
+
+      console.log('Edit form elements found:', {
+        editId: !!editId,
+        editTitle: !!editTitle,
+        editMedium: !!editMedium,
+        editYear: !!editYear,
+        editDimensions: !!editDimensions,
+        editDescription: !!editDescription,
+        editPreview: !!editPreview
+      });
 
       // Populate edit form
-      document.getElementById('editId').value = artwork.id;
-      document.getElementById('editTitle').value = artwork.title || '';
-      document.getElementById('editMedium').value = artwork.medium || '';
-      document.getElementById('editYear').value = artwork.year || '';
-      document.getElementById('editDimensions').value = artwork.dimensions || '';
-      document.getElementById('editDescription').value = artwork.description || '';
-      
-      const editPreview = document.getElementById('editPreview');
-      if (editPreview) editPreview.src = artwork.image_url;
+      if (editId) editId.value = artwork.id;
+      if (editTitle) editTitle.value = artwork.title || '';
+      if (editMedium) editMedium.value = artwork.medium || '';
+      if (editYear) editYear.value = artwork.year || '';
+      if (editDimensions) editDimensions.value = artwork.dimensions || '';
+      if (editDescription) editDescription.value = artwork.description || '';
+      if (editPreview && artwork.image_url) editPreview.src = artwork.image_url;
 
+      console.log('Form populated with values');
       console.log('Opening edit modal...');
-      if (editModal) editModal.hidden = false;
+      
+      if (editModal) {
+        editModal.hidden = false;
+        console.log('✅ Edit modal opened');
+      } else {
+        console.error('❌ Edit modal element not found');
+        alert('Error: Edit modal not available');
+      }
 
     } catch (error) {
-      console.error('Error loading artwork for edit:', error);
+      console.error('❌ Error in editArtwork function:', error);
       alert('Error loading artwork details: ' + error.message);
     }
   }
 
   async function deleteArtwork(id) {
-    if (!confirm('Are you sure you want to delete this artwork?')) return;
+    console.log('=== DELETE ARTWORK FUNCTION CALLED ===');
+    console.log('Artwork ID:', id);
+    
+    if (!confirm('Are you sure you want to delete this artwork?')) {
+      console.log('Delete cancelled by user');
+      return;
+    }
+
+    if (!supa) {
+      console.error('❌ Supabase client not initialized');
+      alert('Error: Database connection not available');
+      return;
+    }
+    
+    if (!session) {
+      console.error('❌ No active session');
+      alert('Error: You must be logged in to delete artwork');
+      return;
+    }
 
     try {
+      console.log('Deleting artwork from database...');
+      
       const { error } = await supa
         .from('artworks')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      console.log('Delete response:', { error });
 
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
+
+      console.log('✅ Artwork deleted successfully');
+      alert('Artwork deleted successfully!');
+      
+      // Refresh data
       loadGalleryData();
       loadOverviewData();
 
     } catch (error) {
-      console.error('Error deleting artwork:', error);
-      alert('Error deleting artwork');
+      console.error('❌ Error deleting artwork:', error);
+      alert('Error deleting artwork: ' + error.message);
     }
   }
 
@@ -549,18 +631,38 @@
 
     // Edit form
     editForm?.addEventListener('submit', async (e) => {
+      console.log('=== EDIT FORM SUBMIT EVENT ===');
       e.preventDefault();
       
-      const id = document.getElementById('editId').value;
-      const title = document.getElementById('editTitle').value;
-      const medium = document.getElementById('editMedium').value;
-      const year = document.getElementById('editYear').value;
-      const dimensions = document.getElementById('editDimensions').value;
-      const description = document.getElementById('editDescription').value;
+      const id = document.getElementById('editId')?.value;
+      const title = document.getElementById('editTitle')?.value;
+      const medium = document.getElementById('editMedium')?.value;
+      const year = document.getElementById('editYear')?.value;
+      const dimensions = document.getElementById('editDimensions')?.value;
+      const description = document.getElementById('editDescription')?.value;
 
-      console.log('Submitting edit form:', { id, title, medium, year, dimensions, description });
+      console.log('Form values collected:', { id, title, medium, year, dimensions, description });
+      
+      if (!supa) {
+        console.error('❌ Supabase client not initialized');
+        alert('Error: Database connection not available');
+        return;
+      }
+      
+      if (!session) {
+        console.error('❌ No active session');
+        alert('Error: You must be logged in to update artwork');
+        return;
+      }
+
+      if (!id) {
+        console.error('❌ No artwork ID found');
+        alert('Error: No artwork ID available for update');
+        return;
+      }
 
       if (!title) {
+        console.error('❌ Title is required');
         alert('Title is required');
         return;
       }
@@ -575,6 +677,7 @@
         };
         
         console.log('Updating artwork with data:', updateData);
+        console.log('Artwork ID to update:', id);
 
         const { data, error } = await supa
           .from('artworks')
@@ -582,21 +685,35 @@
           .eq('id', id)
           .select();
 
-        console.log('Update response:', { data, error });
+        console.log('Update database response:', { data, error });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Database update error:', error);
+          throw error;
+        }
 
-        console.log('Artwork updated successfully');
+        if (!data || data.length === 0) {
+          console.warn('⚠️ No rows were updated - artwork may not exist or no changes made');
+          alert('Warning: No changes were made. Please check if the artwork still exists.');
+          return;
+        }
+
+        console.log('✅ Artwork updated successfully:', data[0]);
         alert('Artwork updated successfully!');
 
-        if (editModal) editModal.hidden = true;
+        // Close modal
+        if (editModal) {
+          editModal.hidden = true;
+          console.log('Edit modal closed');
+        }
         
         // Refresh the gallery and overview
+        console.log('Refreshing gallery and overview data...');
         if (galleryPanel && !galleryPanel.hidden) loadGalleryData();
         if (overviewPanel && !overviewPanel.hidden) loadOverviewData();
 
       } catch (error) {
-        console.error('Update error:', error);
+        console.error('❌ Update error:', error);
         alert('Update failed: ' + error.message);
       }
     });
@@ -718,5 +835,49 @@
       timeout = setTimeout(later, wait);
     };
   }
+
+  // Diagnostic function to test CRUD operations
+  window.testCRUD = async function() {
+    console.log('=== CRUD DIAGNOSTIC TEST ===');
+    console.log('Supabase client:', !!supa);
+    console.log('Session:', !!session);
+    console.log('Session details:', session);
+    
+    if (!supa) {
+      console.error('❌ Supabase client not available');
+      return;
+    }
+    
+    if (!session) {
+      console.error('❌ No active session');
+      return;
+    }
+    
+    try {
+      // Test basic query
+      console.log('Testing basic artworks query...');
+      const { data, error } = await supa
+        .from('artworks')
+        .select('id, title')
+        .limit(5);
+      
+      console.log('Query result:', { data, error });
+      
+      if (error) {
+        console.error('❌ Database query failed:', error);
+        return;
+      }
+      
+      console.log('✅ Database connection working');
+      console.log('Available artworks:', data);
+      
+      // Test functions are available
+      console.log('editArtwork function available:', typeof window.editArtwork);
+      console.log('deleteArtwork function available:', typeof window.deleteArtwork);
+      
+    } catch (error) {
+      console.error('❌ CRUD test failed:', error);
+    }
+  };
 
 })();
