@@ -64,6 +64,43 @@
     auth: { persistSession: true } 
   });
 
+  // Storage helpers
+  function buildPublicUrl(path) {
+    const { data } = supa.storage.from('artworks').getPublicUrl(path);
+    return data?.publicUrl;
+  }
+
+  async function uploadWithProgress(path, file, onProgress) {
+    const { data: sess } = await supa.auth.getSession();
+    const token = sess?.session?.access_token;
+    return new Promise((resolve, reject) => {
+      const base = cfg.url.replace(/\/+$/, '');
+      const url = `${base}/storage/v1/object/artworks/${encodeURIComponent(path)}`;
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('apikey', cfg.anonKey);
+      xhr.setRequestHeader('x-upsert', 'false');
+      if (file.type) xhr.setRequestHeader('Content-Type', file.type);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && typeof onProgress === 'function') {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          onProgress(pct);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { resolve({ Key: path }); }
+        } else {
+          reject(new Error(`Upload failed (${xhr.status})`));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+  }
+
   // Utility functions
   function showStatus(element, message, type = 'info') {
     if (!element) return;
@@ -170,18 +207,16 @@
     try {
       console.log('Loading overview data...');
       
-      // Test storage bucket first
+      // Test storage access (RLS-friendly)
       try {
-        const { data: buckets, error: bucketError } = await supa.storage.listBuckets();
-        console.log('Available storage buckets:', buckets, bucketError);
-        
-        if (!buckets || !buckets.find(b => b.name === 'artworks')) {
-          console.warn('❌ Storage bucket "artworks" not found! You need to create it in Supabase.');
+        const { data: list, error: listErr } = await supa.storage.from('artworks').list('', { limit: 1 });
+        if (listErr) {
+          console.warn('Storage list error (check bucket/policies):', listErr);
         } else {
-          console.log('✅ Storage bucket "artworks" exists');
+          console.log('✅ Storage reachable, sample list:', list);
         }
       } catch (storageError) {
-        console.error('Error checking storage buckets:', storageError);
+        console.error('Error checking storage:', storageError);
       }
       
       const { data: artworks, error } = await supa
@@ -536,7 +571,7 @@
       }
     });
 
-    // Upload form
+  // Upload form
     uploadForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -559,44 +594,32 @@
       }
 
       try {
-        if (progressContainer) progressContainer.hidden = false;
-        
-        let finalImageUrl = imageUrl;
+        if (progressContainer) {
+          progressContainer.hidden = false;
+          if (progressFill) progressFill.style.width = '0%';
+          if (progressText) progressText.textContent = '0%';
+        }
+
+        let finalImageUrl = imageUrl?.trim();
         let fileSize = 0;
 
         if (file) {
           console.log('Starting file upload process...', file);
-          const optimizedFile = await optimizeImage(file);
-          fileSize = optimizedFile.size;
-          
-          const fileName = `artwork_${Date.now()}_${file.name}`;
-          console.log('Uploading file as:', fileName);
-          
-          // Upload file to Supabase Storage
-          const { data, error: uploadError } = await supa.storage
-            .from('artworks')
-            .upload(fileName, optimizedFile, {
-              onUploadProgress: (progress) => {
-                const percent = (progress.loaded / progress.total) * 100;
-                console.log('Upload progress:', percent);
-                if (progressFill) progressFill.style.width = `${percent}%`;
-                if (progressText) progressText.textContent = `${Math.round(percent)}%`;
-              }
-            });
+          const optimizedBlob = await optimizeImage(file);
+          const uploadBlob = optimizedBlob || file;
+          fileSize = uploadBlob.size;
 
-          console.log('Upload response:', { data, uploadError });
+          const safeName = file.name.replace(/\s+/g, '_');
+          const path = `uploads/${Date.now()}_${safeName}`;
+          const typedFile = uploadBlob instanceof File ? uploadBlob : new File([uploadBlob], safeName, { type: uploadBlob.type || 'image/jpeg' });
 
-          if (uploadError) {
-            console.error('Upload error details:', uploadError);
-            throw uploadError;
-          }
+          await uploadWithProgress(path, typedFile, (pct) => {
+            if (progressFill) progressFill.style.width = `${pct}%`;
+            if (progressText) progressText.textContent = `${pct}%`;
+          });
 
-          const { data: { publicUrl } } = supa.storage
-            .from('artworks')
-            .getPublicUrl(fileName);
-          
-          console.log('Generated public URL:', publicUrl);
-          finalImageUrl = publicUrl;
+          finalImageUrl = buildPublicUrl(path);
+          console.log('Generated public URL:', finalImageUrl);
         }
 
         const { error } = await supa
@@ -614,8 +637,9 @@
         if (error) throw error;
 
         uploadForm.reset();
-        if (progressContainer) progressContainer.hidden = true;
-        if (previewContainer) previewContainer.hidden = true;
+  if (progressContainer) progressContainer.hidden = true;
+  if (previewContainer) previewContainer.hidden = true;
+  if (preview) preview.src = '';
         
         alert('Artwork uploaded successfully!');
         
@@ -626,7 +650,7 @@
         console.error('Upload error:', error);
         alert('Upload failed: ' + error.message);
         if (progressContainer) progressContainer.hidden = true;
-      }
+  }
     });
 
     // Edit form
@@ -728,6 +752,15 @@
           if (previewContainer) previewContainer.hidden = false;
         };
         reader.readAsDataURL(file);
+      }
+    });
+
+    // Show preview when entering a direct image URL
+    document.getElementById('imageUrl')?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (!fileInput?.files?.length && /^https?:\/\//i.test(val)) {
+        if (preview) preview.src = val;
+        if (previewContainer) previewContainer.hidden = false;
       }
     });
 
