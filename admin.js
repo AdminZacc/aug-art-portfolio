@@ -315,11 +315,15 @@
   // CRUD Operations
   async function editArtwork(id) {
     try {
+      console.log('Loading artwork for edit:', id);
+      
       const { data: artwork, error } = await supa
         .from('artworks')
         .select('*')
         .eq('id', id)
         .single();
+
+      console.log('Edit artwork query result:', { artwork, error });
 
       if (error) throw error;
 
@@ -330,13 +334,16 @@
       document.getElementById('editYear').value = artwork.year || '';
       document.getElementById('editDimensions').value = artwork.dimensions || '';
       document.getElementById('editDescription').value = artwork.description || '';
-      document.getElementById('editPreview').src = artwork.image_url;
+      
+      const editPreview = document.getElementById('editPreview');
+      if (editPreview) editPreview.src = artwork.image_url;
 
+      console.log('Opening edit modal...');
       if (editModal) editModal.hidden = false;
 
     } catch (error) {
       console.error('Error loading artwork for edit:', error);
-      alert('Error loading artwork details');
+      alert('Error loading artwork details: ' + error.message);
     }
   }
 
@@ -551,23 +558,42 @@
       const dimensions = document.getElementById('editDimensions').value;
       const description = document.getElementById('editDescription').value;
 
+      console.log('Submitting edit form:', { id, title, medium, year, dimensions, description });
+
+      if (!title) {
+        alert('Title is required');
+        return;
+      }
+
       try {
-        const { error } = await supa
+        const updateData = {
+          title,
+          medium,
+          year: year ? parseInt(year) : null,
+          dimensions,
+          description
+        };
+        
+        console.log('Updating artwork with data:', updateData);
+
+        const { data, error } = await supa
           .from('artworks')
-          .update({
-            title,
-            medium,
-            year: year ? parseInt(year) : null,
-            dimensions,
-            description
-          })
-          .eq('id', id);
+          .update(updateData)
+          .eq('id', id)
+          .select();
+
+        console.log('Update response:', { data, error });
 
         if (error) throw error;
 
+        console.log('Artwork updated successfully');
+        alert('Artwork updated successfully!');
+
         if (editModal) editModal.hidden = true;
-        loadGalleryData();
-        loadOverviewData();
+        
+        // Refresh the gallery and overview
+        if (galleryPanel && !galleryPanel.hidden) loadGalleryData();
+        if (overviewPanel && !overviewPanel.hidden) loadOverviewData();
 
       } catch (error) {
         console.error('Update error:', error);
