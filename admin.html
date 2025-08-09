@@ -1,172 +1,516 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    .progress-text{position:abso    .progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:600;letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px #000;}
-    
-    /* Dashboard Navigation */
-    .dashboard-nav{display:flex;gap:.5rem;margin:1rem 0 1.5rem;flex-wrap:wrap;}
-    .dashboard-nav button{padding:.5rem 1rem;border:1px solid #262c35;background:#14181f;color:var(--text-dim);border-radius:8px;cursor:pointer;transition:all .2s;font-size:.75rem;}
-    .dashboard-nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-    .dashboard-nav button:hover:not(.active){background:#1a202c;border-color:#4a5568;}
-    
-    /* Tab Content */
-    .tab-content{display:none;}
-    .tab-content.active{display:block;}
-    
-    /* Stats Cards */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
-    .stat-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:10px;padding:1rem;text-align:center;}
-    .stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);margin:0 0 .25rem;}
-    .stat-label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
-    
-    /* Enhanced Gallery View */
-    .artwork-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem;}
-    .artwork-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s;}
-    .artwork-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3);}
-    .artwork-card img{width:100%;height:200px;object-fit:cover;background:#0f1319;}
-    .artwork-card-body{padding:1rem;}
-    .artwork-card-title{font-size:.9rem;font-weight:600;margin:0 0 .5rem;color:var(--text);}
-    .artwork-card-desc{font-size:.7rem;color:var(--text-dim);margin:0 0 .75rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .artwork-card-meta{font-size:.6rem;color:var(--text-dim);margin:0 0 .75rem;}
-    .artwork-card-actions{display:flex;gap:.5rem;}
-    .artwork-card-actions button{font-size:.6rem;padding:.4rem .7rem;}
-    
-    /* Edit Modal */
-    .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem;}
-    .edit-modal.active{display:flex;}
-    .edit-modal-content{background:var(--bg);border:1px solid #262c35;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;}
-    .edit-modal-header{padding:1rem 1.25rem;border-bottom:1px solid #262c35;display:flex;justify-content:space-between;align-items:center;}
-    .edit-modal-body{padding:1.25rem;}
-    .edit-form{display:grid;gap:.75rem;}
-    
-    /* Quick Actions */
-    .quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
-    .quick-action{background:var(--bg-alt);border:1px solid #262c35;border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:all .2s;}
-    .quick-action:hover{background:#1a202c;border-color:#4a5568;}
-    .quick-action h4{margin:0 0 .5rem;color:var(--text);font-size:.8rem;}
-    .quick-action p{margin:0;color:var(--text-dim);font-size:.7rem;}
-    
-    /* Activity Feed */
-    .activity-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #262c35;}
-    .activity-item:last-child{border-bottom:none;}
-    .activity-icon{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem;flex-shrink:0;}
-    .activity-content{flex:1;}
-    .activity-title{font-size:.75rem;color:var(--text);margin:0 0 .25rem;}
-    .activity-meta{font-size:.6rem;color:var(--text-dim);}
-  </style>te;inset:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:600;letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px #000;}
-    
-    /* Dashboard Navigation */
-    .dashboard-nav{display:flex;gap:.5rem;margin:0 0 1.5rem;flex-wrap:wrap;}
-    .dashboard-nav button{padding:.5rem 1rem;border:1px solid #262c35;background:#14181f;color:var(--text-dim);border-radius:8px;cursor:pointer;transition:all .2s;}
-    .dashboard-nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-    .dashboard-nav button:hover:not(.active){background:#1a202c;border-color:#4a5568;}
-    
-    /* Enhanced Gallery View */
-    .artwork-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem;}
-    .artwork-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s;}
-    .artwork-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3);}
-    .artwork-card img{width:100%;height:200px;object-fit:cover;background:#0f1319;}
-    .artwork-card-body{padding:1rem;}
-    .artwork-card-title{font-size:.9rem;font-weight:600;margin:0 0 .5rem;color:var(--text);}
-    .artwork-card-desc{font-size:.7rem;color:var(--text-dim);margin:0 0 .75rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .artwork-card-meta{font-size:.6rem;color:var(--text-dim);margin:0 0 .75rem;}
-    .artwork-card-actions{display:flex;gap:.5rem;}
-    .artwork-card-actions button{font-size:.6rem;padding:.4rem .7rem;}
-    
-    /* Edit Modal */
-    .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;}
-    .edit-modal-content{background:var(--bg);border:1px solid #262c35;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;}
-    .edit-modal-header{padding:1rem 1.25rem;border-bottom:1px solid #262c35;display:flex;justify-content:space-between;align-items:center;}
-    .edit-modal-body{padding:1.25rem;}
-    .edit-form{display:grid;gap:.75rem;}
-    
-    /* Stats Cards */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
-    .stat-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:10px;padding:1rem;text-align:center;}
-    .stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);margin:0 0 .25rem;}
-    .stat-label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
-  </style><meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Admin • Art Portfolio</title>
-  <meta name="theme-color" content="#0d0f12" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Art Portfolio</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
   <style>
-    .admin-wrap{max-width:900px;margin:0 auto;}
-    .panel{background:var(--bg-alt);border:1px solid #262c35;padding:1rem 1.25rem;margin-bottom:1.2rem;border-radius:var(--radius);box-shadow:var(--shadow);}    
-    form.art-form{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));align-items:start;}
-    form.art-form .full{grid-column:1/-1;}
-    label{display:flex;flex-direction:column;font-size:.7rem;letter-spacing:.5px;font-weight:600;color:var(--text-dim);gap:.35rem;text-transform:uppercase;}
-    input[type=text],input[type=password],input[type=email],textarea{background:#14181f;border:1px solid #262c35;border-radius:8px;padding:.65rem .75rem;font:inherit;color:var(--text);resize:vertical;min-height:46px;}
-    textarea{min-height:120px;}
-    input:focus,textarea:focus{outline:none;box-shadow:var(--focus);border-color:var(--accent);}    
-    .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
-    .danger{background:linear-gradient(135deg,#dc2626,#ef4444);}    
-    .login-form{display:grid;gap:.75rem;max-width:360px;}
-    .muted{color:var(--text-dim);font-size:.7rem;}
-    table{width:100%;border-collapse:collapse;font-size:.7rem;}
-    th,td{padding:.5rem .6rem;text-align:left;border-bottom:1px solid #222831;vertical-align:top;}
-    th{font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;font-size:.6rem;}
-    tbody tr:hover{background:#161b23;}
-    .actions button{font-size:.6rem;padding:.35rem .6rem;}
-    .tag-auth{display:inline-block;background:rgba(16,185,129,.18);color:#34d399;padding:.2rem .5rem;border-radius:999px;font-size:.55rem;letter-spacing:.5px;margin-left:.5rem;}
-    .status-inline{font-size:.7rem;color:var(--text-dim);min-height:1rem;margin:.25rem 0 .75rem;}
-  .drop-zone{position:relative;border:2px dashed #39414d;border-radius:12px;padding:1.25rem;display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:140px;background:#14181f;outline:none;transition:border-color .25s,background .25s;}
-  .drop-zone:focus{border-color:var(--accent);box-shadow:var(--focus);}
-  .drop-zone.dragover{border-color:var(--accent);background:#181e27;}
-  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-  .dz-msg{font-size:.75rem;letter-spacing:.5px;color:var(--text-dim);text-transform:uppercase;}
-  .preview-wrap{margin-top:.75rem;display:grid;gap:.5rem;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
-  .preview-item{position:relative;border:1px solid #262c35;border-radius:10px;overflow:hidden;background:#0f1319;}
-  .preview-item img{display:block;width:100%;height:100%;object-fit:cover;}
-  .preview-item .meta{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,transparent,#000a);padding:.25rem .4rem;font-size:.55rem;color:#fff;display:flex;justify-content:space-between;align-items:center;}
-  .progress-wrap{width:100%;margin-top:.6rem;background:#14181f;border:1px solid #262c35;border-radius:8px;overflow:hidden;height:18px;position:relative;}
-  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-accent));transition:width .15s linear;}
-  .progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:600;letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px #000;}
-  
-  /* Dashboard Navigation */
-  .dashboard-nav{display:flex;gap:.5rem;margin:0 0 1.5rem;flex-wrap:wrap;}
-  .dashboard-nav button{padding:.5rem 1rem;border:1px solid #262c35;background:#14181f;color:var(--text-dim);border-radius:8px;cursor:pointer;transition:all .2s;}
-  .dashboard-nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .dashboard-nav button:hover:not(.active){background:#1a202c;border-color:#4a5568;}
-  
-  /* Enhanced Gallery View */
-  .artwork-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem;}
-  .artwork-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s;}
-  .artwork-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3);}
-  .artwork-card img{width:100%;height:200px;object-fit:cover;background:#0f1319;}
-  .artwork-card-body{padding:1rem;}
-  .artwork-card-title{font-size:.9rem;font-weight:600;margin:0 0 .5rem;color:var(--text);}
-  .artwork-card-desc{font-size:.7rem;color:var(--text-dim);margin:0 0 .75rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .artwork-card-meta{font-size:.6rem;color:var(--text-dim);margin:0 0 .75rem;}
-  .artwork-card-actions{display:flex;gap:.5rem;}
-  .artwork-card-actions button{font-size:.6rem;padding:.4rem .7rem;}
-  
-  /* Edit Modal */
-  .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;}
-  .edit-modal-content{background:var(--bg);border:1px solid #262c35;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;}
-  .edit-modal-header{padding:1rem 1.25rem;border-bottom:1px solid #262c35;display:flex;justify-content:space-between;align-items:center;}
-  .edit-modal-body{padding:1.25rem;}
-  .edit-form{display:grid;gap:.75rem;}
-  
-  /* Stats Cards */
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
-  .stat-card{background:var(--bg-alt);border:1px solid #262c35;border-radius:10px;padding:1rem;text-align:center;}
-  .stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);margin:0 0 .25rem;}
-  .stat-label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
+    :root {
+      --bg: #0a0b0d;
+      --surface: #13151a;
+      --primary: #2d3748;
+      --accent: #4a90e2;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .site-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .site-nav {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: var(--text);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .admin-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Dashboard Navigation */
+    .dashboard-nav {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .dashboard-nav button {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .dashboard-nav button:hover {
+      background: var(--primary);
+      color: var(--text);
+    }
+
+    .dashboard-nav button.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Panel System */
+    .panel {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      color: white;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Artwork Grid */
+    .artwork-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .artwork-card {
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .artwork-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .artwork-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .artwork-card-content {
+      padding: 1rem;
+    }
+
+    .artwork-card h3 {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-clamp: 2;
+    }
+
+    .artwork-card p {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .artwork-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .artwork-card-actions button {
+      flex: 1;
+      padding: 0.5rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .edit-btn {
+      background: var(--warning);
+      color: white;
+    }
+
+    .delete-btn {
+      background: var(--error);
+      color: white;
+    }
+
+    /* Form Styles */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Upload Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(74, 144, 226, 0.1);
+    }
+
+    .drop-zone-content {
+      pointer-events: none;
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      height: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Edit Modal */
+    .edit-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .edit-modal-content {
+      background: var(--surface);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+
+    .edit-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 1.5rem 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .edit-modal-header h3 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .edit-modal-header button {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .edit-modal-header button:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .edit-preview {
+      margin: 0 1.5rem 1.5rem;
+      text-align: center;
+    }
+
+    .edit-preview img {
+      max-width: 100%;
+      height: auto;
+      max-height: 200px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .edit-modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .edit-modal-actions button {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    #cancelEdit {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    #saveEdit {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Auth Section */
+    .auth-section {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .auth-container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .auth-container h2 {
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .auth-container p {
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+
+    .auth-container form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .auth-options button {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .auth-options button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .site-header {
+        padding: 1rem;
+      }
+
+      .admin-wrap {
+        padding: 1rem;
+      }
+
+      .dashboard-nav {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+
+      .dashboard-nav button {
+        flex: 1;
+        min-width: 0;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      .artwork-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .edit-modal-content {
+        margin: 0.5rem;
+        max-height: 95vh;
+      }
+
+      .edit-modal-actions {
+        flex-direction: column;
+      }
+    }
+
+    [hidden] {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
   <header class="site-header">
-    <h1 class="site-title">Admin</h1>
+    <h1 class="site-title">Admin Dashboard</h1>
     <nav class="site-nav">
       <a class="btn" href="./index.html">← Back to Gallery</a>
       <button id="logoutBtn" class="btn" type="button" hidden>Sign Out</button>
     </nav>
   </header>
+  
   <main class="admin-wrap">
     <!-- Dashboard Navigation -->
     <nav class="dashboard-nav" id="dashboardNav" hidden>
@@ -355,7 +699,7 @@
             <img id="editPreview" alt="Artwork preview">
           </div>
           
-          <div class="form-grid">
+          <div class="form-grid" style="padding:0 1.5rem;">
             <div>
               <label for="editTitle">Title</label>
               <input type="text" id="editTitle" required>
@@ -377,7 +721,7 @@
             </div>
           </div>
           
-          <div style="margin-top:1rem;">
+          <div style="margin-top:1rem;padding:0 1.5rem;">
             <label for="editDescription">Description</label>
             <textarea id="editDescription" rows="3"></textarea>
           </div>
@@ -390,205 +734,43 @@
       </div>
     </div>
 
-    <!-- Dashboard Navigation -->
-    <div class="dashboard-nav">
-      <button class="active" data-tab="overview">📊 Overview</button>
-      <button data-tab="upload">📤 Upload</button>
-      <button data-tab="gallery">🖼️ Gallery</button>
-      <button data-tab="settings">⚙️ Settings</button>
-    </div>
-
-    <!-- Overview Tab -->
-    <div id="overview-tab" class="tab-content active">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-number" id="total-artworks">0</div>
-          <div class="stat-label">Total Artworks</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="storage-used">0 MB</div>
-          <div class="stat-label">Storage Used</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="recent-uploads">0</div>
-          <div class="stat-label">This Week</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="connection-status">-</div>
-          <div class="stat-label">Connection</div>
-        </div>
-      </div>
-      
-      <div class="quick-actions">
-        <div class="quick-action" onclick="switchTab('upload')">
-          <h4>📤 Upload Artwork</h4>
-          <p>Add new images to your portfolio</p>
-        </div>
-        <div class="quick-action" onclick="switchTab('gallery')">
-          <h4>🖼️ Manage Gallery</h4>
-          <p>Edit and organize your artworks</p>
-        </div>
-        <div class="quick-action" onclick="testConnection()">
-          <h4>🔗 Test Connection</h4>
-          <p>Verify Supabase connectivity</p>
-        </div>
-      </div>
-      
-      <div class="section">
-        <h3>Recent Activity</h3>
-        <div id="recent-activity">
-          <div class="activity-item">
-            <div class="activity-icon">📊</div>
-            <div class="activity-content">
-              <div class="activity-title">Dashboard loaded</div>
-              <div class="activity-meta">Just now</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upload Tab -->
-    <div id="upload-tab" class="tab-content">
-      <!-- Auth Panel (shown when not authenticated) -->
-      <section id="authPanel" class="panel">
-        <h2 style="margin-top:0;font-size:1.05rem;">Sign In Required</h2>
-        <form id="loginForm" class="login-form" autocomplete="on">
-          <label>Email
-            <input id="loginEmail" type="email" required placeholder="you@example.com"/>
-          </label>
-          <label>Password
-            <input id="loginPassword" type="password" required placeholder="••••••••"/>
-          </label>
-          <div class="row">
-            <button class="btn" type="submit">Sign In</button>
-            <span id="loginStatus" class="status-inline"></span>
-          </div>
-          <p class="muted">Use an existing Supabase auth user. (Sign-up disabled here to keep control.)</p>
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-section">
+      <div class="auth-container">
+        <h2>Admin Access</h2>
+        <p>Please sign in to access the admin panel</p>
+        
+        <form id="authForm">
+          <input type="email" id="email" placeholder="Email" required>
+          <input type="password" id="password" placeholder="Password" required>
+          <button type="submit" id="authBtn">Sign In</button>
         </form>
-      </section>
-
-      <!-- Upload Panel (shown when authenticated) -->
-      <section id="uploadPanel" class="panel" hidden>
-        <h2 style="margin-top:0;font-size:1.05rem;">Add Artwork<span id="authTag" class="tag-auth" hidden>AUTH</span></h2>
-        <form id="artForm" class="art-form" autocomplete="off">
-          <label>Title
-            <input name="title" id="artTitle" type="text" required maxlength="140" placeholder="Artwork title"/>
-          </label>
-          <label class="full">Image (File or External URL)
-            <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drag & drop image or click to browse">
-              <input name="file" id="fileInput" type="file" accept="image/*" aria-label="Image file" />
-              <span class="dz-msg">Drop image / Click to browse</span>
-            </div>
-            <div class="preview-wrap" id="previewWrap" hidden></div>
-            <input name="image_url" id="extUrl" type="text" placeholder="https://external-image-url..." style="margin-top:.6rem" />
-            <div class="row" style="margin-top:.75rem;align-items:flex-end;">
-              <label style="flex:1;min-width:140px;">Max Dimension (px)
-                <input id="maxDim" type="number" min="256" max="6000" value="1600" style="min-height:46px;" />
-              </label>
-              <label style="flex:1;min-width:140px;">Quality (0.4–1.0)
-                <input id="quality" type="number" step="0.05" min="0.4" max="1" value="0.8" style="min-height:46px;" />
-              </label>
-              <label style="flex:0 0 auto;margin-top:.9rem;display:flex;align-items:center;gap:.4rem;font-size:.6rem;text-transform:none;font-weight:500;"> 
-                <input id="skipOptimize" type="checkbox" /> No Optimize
-              </label>
-            </div>
-            <p class="muted" style="margin:.4rem 0 0;">Images larger than the max dimension are proportionally resized and encoded as JPEG/WebP (except GIF/SVG). Uncheck to upload original.</p>
-            <div id="uploadProgressWrap" class="progress-wrap" hidden>
-              <div id="uploadProgressBar" class="progress-bar"></div>
-              <div id="uploadProgressText" class="progress-text">0%</div>
-            </div>
-          </label>
-          <label class="full">Description
-            <textarea name="description" id="artDesc" maxlength="1500" placeholder="Short description"></textarea>
-          </label>
-          <div class="row full">
-            <button class="btn" type="submit">Upload & Save</button>
-            <button id="resetBtn" class="btn danger" type="reset">Reset</button>
-            <button id="clearImageBtn" class="btn" type="button" style="background:linear-gradient(135deg,#475569,#64748b);">Clear Image</button>
-            <span id="formStatus" class="status-inline"></span>
-          </div>
-          <p class="muted full">If both a file and an external URL are provided, the uploaded file is used. Images upload into storage bucket <code>artworks</code>. External URL is used only if no file selected.</p>
-        </form>
-      </section>
-    </div>
-
-    <!-- Gallery Tab -->
-    <div id="gallery-tab" class="tab-content">
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">Artwork Gallery</h3>
-          <div style="display:flex;gap:.5rem;">
-            <button class="btn" onclick="refreshGallery()">🔄 Refresh</button>
-            <button class="btn" onclick="switchTab('upload')">📤 Add New</button>
-          </div>
+        
+        <div class="auth-options">
+          <button id="signupBtn" type="button">Need an account? Sign up</button>
+          <button id="magicLinkBtn" type="button">Send Magic Link</button>
+          <button id="resetPasswordBtn" type="button">Reset Password</button>
         </div>
-        <div id="artworkGrid" class="artwork-grid">
-          <p style="color:var(--text-dim);grid-column:1/-1;text-align:center;padding:2rem;">Loading artworks...</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Tab -->
-    <div id="settings-tab" class="tab-content">
-      <div class="section">
-        <h3>Connection Settings</h3>
-        <div class="row" style="align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <button id="connTestBtn" type="button" class="btn" style="flex:0 0 auto;">Test Supabase</button>
-          <span id="connStatus" class="status-inline" aria-live="polite"></span>
-        </div>
-        <p class="muted">Runs a lightweight query (limit 1) against <code>artworks</code> to verify URL/key & latency.</p>
-      </div>
-      
-      <div class="section">
-        <h3>Storage Information</h3>
-        <div id="storage-info">
-          <p style="color:var(--text-dim);">Loading storage details...</p>
-        </div>
-      </div>
-      
-      <div class="section">
-        <h3>Account</h3>
-        <div style="display:flex;gap:.5rem;align-items:center;">
-          <button id="logoutBtn" class="btn danger" type="button">Sign Out</button>
-          <span id="user-email" style="color:var(--text-dim);font-size:.8rem;"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div id="editModal" class="edit-modal">
-      <div class="edit-modal-content">
-        <div class="edit-modal-header">
-          <h3 style="margin:0;">Edit Artwork</h3>
-          <button class="btn" onclick="closeEditModal()" style="padding:.25rem .5rem;">✕</button>
-        </div>
-        <div class="edit-modal-body">
-          <form id="editForm" class="edit-form">
-            <input type="hidden" id="editId" />
-            <label>Title
-              <input id="editTitle" type="text" required maxlength="140" />
-            </label>
-            <label>Description
-              <textarea id="editDescription" maxlength="1500"></textarea>
-            </label>
-            <div style="display:flex;gap:.5rem;margin-top:1rem;">
-              <button type="submit" class="btn">Save Changes</button>
-              <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
-            </div>
-          </form>
-        </div>
+        
+        <div id="authStatus"></div>
       </div>
     </div>
 
   </main>
-  <footer class="site-footer"><p>Admin Panel • Supabase</p></footer>
+  
+  <footer class="site-footer" style="text-align:center;padding:2rem;color:var(--text-dim);font-size:.8rem;">
+    <p>Admin Panel • Supabase</p>
+  </footer>
+  
   <script src="config.public.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
   <script src="admin.js" defer></script>
-  <script defer>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW reg failed',e));});}</script>
+  <script defer>
+    if('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW reg failed', e));
+      });
+    }
+  </script>
 </body>
 </html>
-git pull --no-rebase origin main
-git commit -m "Add admin panel, image optimization, real progress uploads"
-git push origin main

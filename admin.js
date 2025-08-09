@@ -1,53 +1,131 @@
-/* Admin upload + minimal auth (email/password) for Supabase */
+/* Admin Dashboard with CRUD operations for Supabase art portfolio */
 (function() {
   let supa, session;
   const cfg = window.SUPABASE_CONFIG;
-  const loginForm = document.getElementById('loginForm');
-  const loginStatus = document.getElementById('loginStatus');
-  const connTestBtn = document.getElementById('connTestBtn');
-  const connStatus = document.getElementById('connStatus');
+  
+  // Dashboard Elements
+  const dashboardNav = document.getElementById('dashboardNav');
+  const authSection = document.getElementById('authSection');
   const logoutBtn = document.getElementById('logoutBtn');
-  const authPanel = document.getElementById('authPanel');
+  
+  // Panel Elements
+  const overviewPanel = document.getElementById('overviewPanel');
   const uploadPanel = document.getElementById('uploadPanel');
-  const artForm = document.getElementById('artForm');
-  const formStatus = document.getElementById('formStatus');
+  const galleryPanel = document.getElementById('galleryPanel');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const editModal = document.getElementById('editModal');
+  
+  // Auth Form Elements
+  const authForm = document.getElementById('authForm');
+  const authStatus = document.getElementById('authStatus');
+  const signupBtn = document.getElementById('signupBtn');
+  const magicLinkBtn = document.getElementById('magicLinkBtn');
+  const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+  
+  // Upload Form Elements
+  const uploadForm = document.getElementById('uploadForm');
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
-  const previewWrap = document.getElementById('previewWrap');
-  const extUrlInput = document.getElementById('extUrl');
-  const clearImageBtn = document.getElementById('clearImageBtn');
-  const maxDimInput = document.getElementById('maxDim');
-  const qualityInput = document.getElementById('quality');
-  const skipOptimizeChk = document.getElementById('skipOptimize');
-  const progressWrap = document.getElementById('uploadProgressWrap');
-  const progressBar = document.getElementById('uploadProgressBar');
-  const progressText = document.getElementById('uploadProgressText');
+  const progressContainer = document.getElementById('progressContainer');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const previewContainer = document.getElementById('previewContainer');
+  const preview = document.getElementById('preview');
+  
+  // Gallery Elements
+  const galleryGrid = document.getElementById('galleryGrid');
+  const galleryLoading = document.getElementById('galleryLoading');
+  const galleryEmpty = document.getElementById('galleryEmpty');
+  const searchArtworks = document.getElementById('searchArtworks');
+  const sortBy = document.getElementById('sortBy');
+  const refreshGallery = document.getElementById('refreshGallery');
+  
+  // Edit Modal Elements
+  const editForm = document.getElementById('editForm');
+  const closeEdit = document.getElementById('closeEdit');
+  const cancelEdit = document.getElementById('cancelEdit');
+  
+  // Settings Elements
+  const userEmail = document.getElementById('userEmail');
+  const lastSignIn = document.getElementById('lastSignIn');
+  const clearCache = document.getElementById('clearCache');
+  const optimizeStorage = document.getElementById('optimizeStorage');
+  const signOut = document.getElementById('signOut');
 
   if (!cfg || !cfg.url || !cfg.anonKey) {
-    if (loginStatus) loginStatus.textContent = 'Missing config.js';
+    if (authStatus) authStatus.textContent = 'Missing Supabase configuration';
     return;
   }
-  supa = window.supabase.createClient(cfg.url, cfg.anonKey, { auth: { persistSession: true } });
+  
+  supa = window.supabase.createClient(cfg.url, cfg.anonKey, { 
+    auth: { persistSession: true } 
+  });
 
-  function set(el, msg) { if (el) el.textContent = msg || ''; }
-  function esc(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+  // Utility functions
+  function showStatus(element, message, type = 'info') {
+    if (!element) return;
+    element.textContent = message;
+    element.className = `status ${type}`;
+    setTimeout(() => {
+      element.textContent = '';
+      element.className = 'status';
+    }, 5000);
+  }
+  
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+  
+  function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
 
-  function toggleAuthUI() {
-    const authed = !!session;
+  // Dashboard Navigation
+  function showPanel(panelName) {
+    // Hide all panels
+    [overviewPanel, uploadPanel, galleryPanel, settingsPanel].forEach(panel => {
+      if (panel) panel.hidden = true;
+    });
     
-    // Hide/show main dashboard elements
-    const dashboardNav = document.querySelector('.dashboard-nav');
-    const overviewTab = document.getElementById('overview-tab');
-    const galleryTab = document.getElementById('gallery-tab');
-    const settingsTab = document.getElementById('settings-tab');
+    // Remove active state from all nav buttons
+    document.querySelectorAll('.dashboard-nav button').forEach(btn => {
+      btn.classList.remove('active');
+    });
     
-    if (dashboardNav) dashboardNav.style.display = authed ? 'flex' : 'none';
-    if (overviewTab) overviewTab.style.display = authed ? 'block' : 'none';
-    if (galleryTab) galleryTab.style.display = authed ? 'block' : 'none';
-    if (settingsTab) settingsTab.style.display = authed ? 'block' : 'none';
-    
-    // Handle auth panel visibility
-    authPanel.hidden = authed;
+    // Show selected panel and activate nav button
+    switch(panelName) {
+      case 'overview':
+        if (overviewPanel) overviewPanel.hidden = false;
+        if (document.getElementById('navOverview')) document.getElementById('navOverview').classList.add('active');
+        loadOverviewData();
+        break;
+      case 'upload':
+        if (uploadPanel) uploadPanel.hidden = false;
+        if (document.getElementById('navUpload')) document.getElementById('navUpload').classList.add('active');
+        break;
+      case 'gallery':
+        if (galleryPanel) galleryPanel.hidden = false;
+        if (document.getElementById('navGallery')) document.getElementById('navGallery').classList.add('active');
+        loadGalleryData();
+        break;
+      case 'settings':
+        if (settingsPanel) settingsPanel.hidden = false;
+        if (document.getElementById('navSettings')) document.getElementById('navSettings').classList.add('active');
+        loadSettingsData();
+        break;
+    }
+  }
+
+  // Make showPanel globally available for onclick handlers
+  window.showPanel = showPanel;
     uploadPanel.hidden = !authed;
     logoutBtn.hidden = !authed;
     
