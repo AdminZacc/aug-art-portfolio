@@ -53,9 +53,12 @@
   const signOut = document.getElementById('signOut');
 
   if (!cfg || !cfg.url || !cfg.anonKey) {
+    console.error('Supabase config missing:', cfg);
     if (authStatus) authStatus.textContent = 'Missing Supabase configuration';
     return;
   }
+  
+  console.log('Initializing Supabase client with config:', { url: cfg.url, hasAnonKey: !!cfg.anonKey });
   
   supa = window.supabase.createClient(cfg.url, cfg.anonKey, { 
     auth: { persistSession: true } 
@@ -131,18 +134,27 @@
   function toggleAuthUI() {
     const authenticated = !!session;
     
+    console.log('Toggling auth UI:', { authenticated, session });
+    
     if (authSection) authSection.hidden = authenticated;
     if (dashboardNav) dashboardNav.hidden = !authenticated;
     if (logoutBtn) logoutBtn.hidden = !authenticated;
     
     if (authenticated) {
+      console.log('User authenticated, showing overview panel');
       showPanel('overview');
+    } else {
+      console.log('User not authenticated, showing auth section');
     }
   }
 
   async function refreshSession() {
     try {
-      const { data: { session: currentSession } } = await supa.auth.getSession();
+      console.log('Refreshing session...');
+      const { data: { session: currentSession }, error } = await supa.auth.getSession();
+      
+      console.log('Session refresh result:', { session: currentSession, error });
+      
       session = currentSession;
       toggleAuthUI();
       return session;
@@ -348,11 +360,70 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
+      console.log('Auth form submitted with email:', email);
+
       try {
-        const { error } = await supa.auth.signInWithPassword({ email, password });
+        const { data, error } = await supa.auth.signInWithPassword({ email, password });
+        
+        console.log('Auth response:', { data, error });
+        
         if (error) throw error;
         
         showStatus(authStatus, 'Signed in successfully!', 'success');
+      } catch (error) {
+        console.error('Auth error:', error);
+        showStatus(authStatus, error.message, 'error');
+      }
+    });
+
+    // Auth option buttons
+    signupBtn?.addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      if (!email || !password) {
+        showStatus(authStatus, 'Please enter email and password', 'error');
+        return;
+      }
+      
+      try {
+        const { error } = await supa.auth.signUp({ email, password });
+        if (error) throw error;
+        showStatus(authStatus, 'Check your email for confirmation link', 'success');
+      } catch (error) {
+        showStatus(authStatus, error.message, 'error');
+      }
+    });
+
+    magicLinkBtn?.addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      
+      if (!email) {
+        showStatus(authStatus, 'Please enter your email', 'error');
+        return;
+      }
+      
+      try {
+        const { error } = await supa.auth.signInWithOtp({ email });
+        if (error) throw error;
+        showStatus(authStatus, 'Magic link sent to your email', 'success');
+      } catch (error) {
+        showStatus(authStatus, error.message, 'error');
+      }
+    });
+
+    resetPasswordBtn?.addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      
+      if (!email) {
+        showStatus(authStatus, 'Please enter your email', 'error');
+        return;
+      }
+      
+      try {
+        const { error } = await supa.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        showStatus(authStatus, 'Password reset email sent', 'success');
       } catch (error) {
         showStatus(authStatus, error.message, 'error');
       }
@@ -572,11 +643,13 @@
 
     // Auth state listener
     supa.auth.onAuthStateChange((event, newSession) => {
+      console.log('Auth state changed:', { event, newSession });
       session = newSession;
       toggleAuthUI();
     });
 
     // Initialize
+    console.log('Initializing admin panel...');
     refreshSession();
   });
 
